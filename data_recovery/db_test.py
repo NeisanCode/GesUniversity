@@ -54,27 +54,32 @@ def seed_large_dataset(
         print("Creating core reference data (Majors, Levels, Fee Types)...")
 
         # ----------------------------------------------------
-        # 1. Majors & Levels
+        # 1. Majors & Levels (with short code mapping)
         # ----------------------------------------------------
-        majors_list = [
-            "Génie Informatique",
-            "Gestion d'Entreprise",
-            "Droit des Affaires",
-            "Marketing Digital",
-            "Comptabilité & Finance",
-        ]
-        levels_list = [
-            "Licence 1",
-            "Licence 2",
-            "Licence 3",
-            "Master 1",
-            "Master 2",
-        ]
+        majors_map = {
+            "Génie Informatique": "GI",
+            "Gestion d'Entreprise": "GE",
+            "Droit des Affaires": "DA",
+            "Marketing Digital": "MD",
+            "Comptabilité & Finance": "CF",
+        }
+        
+        levels_map = {
+            "Licence 1": "L1",
+            "Licence 2": "L2",
+            "Licence 3": "L3",
+            "Master 1": "M1",
+            "Master 2": "M2",
+        }
 
-        majors = [Major(name=m) for m in majors_list]
-        levels = [Level(name=l) for l in levels_list]
+        majors = [Major(name=name) for name in majors_map.keys()]
+        levels = [Level(name=name) for name in levels_map.keys()]
         session.add_all(majors + levels)
         session.flush()
+
+        # Helper lookups to fetch short codes
+        major_by_id = {m.id: majors_map[m.name] for m in majors}
+        level_by_id = {l.id: levels_map[l.name] for l in levels}
 
         # ----------------------------------------------------
         # 2. Fee Types
@@ -101,11 +106,18 @@ def seed_large_dataset(
         session.add_all(programs)
         session.flush()
 
-        # Months list for installments
+        # Exactly 10 Academic Months per year
         academic_months = [
-            Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER,
-            Month.JANUARY, Month.FEBRUARY, Month.MARCH,
-            Month.APRIL, Month.MAY, Month.JUNE, Month.JULY
+            Month.OCTOBER,
+            Month.NOVEMBER,
+            Month.DECEMBER,
+            Month.JANUARY,
+            Month.FEBRUARY,
+            Month.MARCH,
+            Month.APRIL,
+            Month.MAY,
+            Month.JUNE,
+            Month.JULY,
         ]
 
         receipt_counter = 10001
@@ -119,7 +131,7 @@ def seed_large_dataset(
             student = Student(
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
-                student_id_number=f"ETU-{start_year}-{i:04d}",
+                student_id_number=f"ETU{start_year}{i:04d}",  # e.g., ETU20240001
                 date_of_birth=fake.date_of_birth(minimum_age=17, maximum_age=26),
                 email=fake.unique.email(),
                 address=fake.address().replace("\n", ", "),
@@ -135,9 +147,8 @@ def seed_large_dataset(
         for y_idx in range(years_count):
             year_start = start_year + y_idx
             year_end = year_start + 1
-            label = f"{year_start}-{year_end}"
+            label = f"{year_start} - {year_end}"  # e.g., 2024 - 2025
             
-            # Mark only the most recent year as active
             is_current_year = y_idx == (years_count - 1)
             status = AcademicYearStatus.ACTIVE if is_current_year else AcademicYearStatus.COMPLETED
 
@@ -152,21 +163,24 @@ def seed_large_dataset(
 
             print(f"Processing Academic Year {label}...")
 
-            # Create Classes and Fees for each program in this Academic Year
             year_classes = []
             year_installments = {}  # program_id -> list of Installment objects
 
             for prog in programs:
-                # Class Group
+                # Group codes formatted like GIL1A, GEM1B, etc.
+                major_code = major_by_id[prog.major_id]
+                level_code = level_by_id[prog.level_id]
+                section_letter = random.choice(["A", "B"])
+                
                 class_group = ClassGroup(
-                    name=f"Group-{prog.id}-{label}",
+                    name=f"{major_code}{level_code}{section_letter}",
                     program_id=prog.id,
                     academic_year_id=academic_year.id,
                 )
                 year_classes.append(class_group)
 
                 # Fee Structure
-                total_tuition = float(random.choice([400000, 550000, 700000]))
+                total_tuition = float(random.choice([500000, 600000, 750000]))
                 fee = Fee(
                     program_id=prog.id,
                     academic_year_id=academic_year.id,
@@ -177,12 +191,11 @@ def seed_large_dataset(
                 session.add(fee)
                 session.flush()
 
-                # Monthly Installments (Split into 5 payments)
-                selected_months = academic_months[:5]
-                monthly_amount = total_tuition / len(selected_months)
+                # Generate 10 Monthly Installments (Equal payments per month)
+                monthly_amount = total_tuition / len(academic_months)
                 
                 prog_installments = []
-                for m in selected_months:
+                for m in academic_months:
                     inst = Installment(
                         fee_id=fee.id,
                         month=m,
@@ -200,7 +213,6 @@ def seed_large_dataset(
             # ----------------------------------------------------
             # 5. Enroll Students & Generate Payments
             # ----------------------------------------------------
-            # Assign a subset of students to this academic year
             active_students = random.sample(
                 all_created_students, 
                 k=int(num_students * random.uniform(0.6, 0.9))
@@ -221,11 +233,9 @@ def seed_large_dataset(
                 session.add(enrollment)
                 session.flush()
 
-                # Generate Payments based on Installments
+                # Pick installments to pay (Simulating FULL, PARTIAL, or UNPAID students)
                 prog_insts = year_installments[assigned_class.program_id]
                 
-                # Simulate payment behavior: 
-                # Some pay all installments, some pay part, some haven't paid yet
                 payment_behavior = random.choices(
                     population=["FULL", "PARTIAL", "NONE"],
                     weights=[0.6, 0.3, 0.1],
@@ -271,9 +281,8 @@ def seed_large_dataset(
 
 
 if __name__ == "__main__":
-    # Adjust parameters here to scale data up or down
     seed_large_dataset(
-        num_students=500,  # Number of fake students
-        start_year=2024,   # Earliest academic start year
-        years_count=3,     # Creates 2024-2025, 2025-2026, 2026-2027
+        num_students=100,
+        start_year=2024,
+        years_count=3,
     )

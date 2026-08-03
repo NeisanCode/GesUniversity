@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from controllers import InscriptionController
+from controllers import EnrollmentController
 from ..widgets.datepicker import DatePicker
 from models import PaymentMethod
 
@@ -7,7 +7,7 @@ from models import PaymentMethod
 class EnrollmentFormFrame(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, fg_color="transparent")
-        self.controller = InscriptionController(self)
+        self.controller = EnrollmentController(self)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)

@@ -1,6 +1,6 @@
 import customtkinter as ctk
 
 
-class MenuPage(ctk.CTk):
+class MenuApp(ctk.CTk):
     def __init__(self):
         super().__init__()

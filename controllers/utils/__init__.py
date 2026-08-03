@@ -1,0 +1,1 @@
+from .generate_receipt import generate_receipt_pdf

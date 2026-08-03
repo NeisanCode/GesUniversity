@@ -1,6 +1,6 @@
 import customtkinter as ctk
-from .form.inscription_form import InscriptionFormFrame
-from .form.reinscription_form import ReEnrollmentFormFrame
+from .form.enrollment_form import EnrollmentFormFrame
+from .form.reenrollment_form import ReEnrollmentFormFrame
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -45,7 +45,7 @@ class MainPageApp(ctk.CTk):
         tab_reinscription = self.tabview.add("  RÉINSCRIPTION  ")
 
         # --- IMPORTATION ET EMBARQUEMENT DES COMPOSANTS ---
-        self.page_inscription = InscriptionFormFrame(tab_inscription)
+        self.page_inscription = EnrollmentFormFrame(tab_inscription)
         self.page_inscription.pack(fill="both", expand=True)
 
         self.page_reinscription = ReEnrollmentFormFrame(tab_reinscription)

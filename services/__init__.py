@@ -1,2 +1,4 @@
 from .enrollment_service import EnrollmentService
-from .payment_service import PaymentService
+from .month_payment_service import MonthlyPaymentService
+
+__all__ = ["EnrollmentService", "MonthlyPaymentService"]

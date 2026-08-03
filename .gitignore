@@ -1,1 +1,4 @@
+/receipts
+/.venv
+/.pytest_cache
 *.txt

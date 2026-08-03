@@ -12,4 +12,5 @@ dependencies = [
     "reportlab>=5.0.0",
     "sqlalchemy>=2.0.51",
     "tkcalendar>=1.6.1",
+    "web-browser>=0.0.1",
 ]
