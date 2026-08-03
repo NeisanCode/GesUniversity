@@ -1,10 +1,9 @@
 from datetime import date
+from typing import Callable
+from sqlalchemy.orm import Session
 
-from database import get_session
 from models import (
     Enrollment,
-    Fee,
-    FeeType,
     Month,
     Payment,
     PaymentMethod,
@@ -16,17 +15,13 @@ from services.errors.exceptions import EtudiantNotFoundError, PaymentValidationE
 
 
 class MonthlyPaymentService:
-    def __init__(self):
-        self.repo = None
-
-    def _get_repo(self, session):
-        if self.repo is None:
-            self.repo = MonthlyPaymentRepo(session)
-        return self.repo
+    def __init__(self, session_factory: Callable[[], Session]):
+        """Injecte le factory de session (ex: SessionLocal ou get_session contextmanager)."""
+        self.session_factory = session_factory
 
     def search_student(self, registration_number: str):
-        with get_session() as session:
-            repo = self._get_repo(session)
+        with self.session_factory() as session:
+            repo = MonthlyPaymentRepo(session)
             student = repo.find_student_by_registration(registration_number)
             if student is None:
                 raise EtudiantNotFoundError(
@@ -48,8 +43,7 @@ class MonthlyPaymentService:
             month
             for month in all_months
             if month not in paid_months
-            and month
-            in {item["month"] for item in installments if not item.get("paid")}
+            and month in {item["month"] for item in installments if not item.get("paid")}
         ]
 
     def get_installment_amount(self, installments, month_value):
@@ -75,9 +69,10 @@ class MonthlyPaymentService:
         month_value,
         amount_paid: float,
         payment_method_value: str,
-    ):
-        with get_session() as session:
-            repo = self._get_repo(session)
+    ) -> Payment:
+        with self.session_factory() as session:
+            repo = MonthlyPaymentRepo(session)
+            
             installment = repo.get_installment_for_enrollment_and_month(
                 enrollment, month_value
             )
@@ -111,6 +106,8 @@ class MonthlyPaymentService:
             )
             session.add(receipt)
             session.commit()
+
+            # Forcer le chargement en mémoire des attributs utiles avant fermeture du context manager
             _ = payment.receipt.receipt_number
             _ = payment.enrollment.student.first_name
             _ = (
@@ -119,6 +116,7 @@ class MonthlyPaymentService:
                 else None
             )
             _ = payment.installment.month if payment.installment else None
+
             return payment
 
     def _matches_month(self, month, month_value):

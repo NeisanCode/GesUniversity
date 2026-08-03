@@ -1,4 +1,13 @@
+# Unecessary folder
 /receipts
+
+# Virtual env
 /.venv
+
+# Python
 /.pytest_cache
-*.txt
+__pycache__/
+*.py[cod]
+
+# Base de données SQLite
+*.db

@@ -3,6 +3,7 @@ from tkinter import messagebox
 from typing import TYPE_CHECKING
 import webbrowser
 
+from database import get_session  # Importer la fabrique/gestionnaire de sessions
 from models import Month, PaymentMethod
 from services import MonthlyPaymentService
 from services.errors.exceptions import EtudiantNotFoundError, PaymentValidationError
@@ -15,7 +16,8 @@ if TYPE_CHECKING:
 class MonthlyPaymentController:
     def __init__(self, view: "MonthlyPaymentFormFrame"):
         self.view = view
-        self.service = MonthlyPaymentService()
+        # Injection explicite de get_session comme session_factory
+        self.service = MonthlyPaymentService(session_factory=get_session)
         self.current_student = None
         self.current_enrollment = None
         self.current_installments = []
@@ -238,6 +240,3 @@ class MonthlyPaymentController:
 
         except Exception as exc:
             messagebox.showerror("Erreur", f"Impossible d'ouvrir le reçu : {str(exc)}")
-
-
-# ETU20240098
