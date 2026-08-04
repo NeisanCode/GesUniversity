@@ -1,4 +1,4 @@
 from .menu_app import MenuApp
-from .pages.inscriptions.form.enrollment_form import EnrollmentFormFrame
-from .pages.inscriptions.form.reenrollment_form import ReEnrollmentFormFrame
-from .pages.inscriptions.inscription_page import InscriptionPage
+from .form.enrollment.enrollment_form import EnrollmentFormFrame
+from .form.enrollment.reenrollment_form import ReEnrollmentFormFrame
+from .form.enrollment.registration_form import RegistrationForm

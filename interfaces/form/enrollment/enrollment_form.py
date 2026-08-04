@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from controllers import EnrollmentController
-from ..widgets.datepicker import DatePicker
+from .widgets.datepicker import DatePicker
 from models import PaymentMethod
 
 

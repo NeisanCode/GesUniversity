@@ -82,7 +82,7 @@ def seed_large_dataset(
         level_by_id = {l.id: levels_map[l.name] for l in levels}
 
         # ----------------------------------------------------
-        # 2. Fee Types (Ajout du type d'inscription)
+        # 2. Fee Types (Ajout des frais d'inscription et de réinscription)
         # ----------------------------------------------------
         tuition_fee_type = FeeType(
             name="Frais de Scolarité",
@@ -94,12 +94,22 @@ def seed_large_dataset(
             code="REGISTRATION_FEE",
             is_system=True,
         )
+        re_enrollment_fee_type = FeeType(
+            name="Frais de Réinscription",
+            code="RE_ENROLLMENT_FEE",
+            is_system=True,
+        )
         library_fee_type = FeeType(
             name="Frais de Bibliothèque",
             code="LIBRARY_FEE",
             is_system=False,
         )
-        session.add_all([tuition_fee_type, registration_fee_type, library_fee_type])
+        session.add_all([
+            tuition_fee_type, 
+            registration_fee_type, 
+            re_enrollment_fee_type, 
+            library_fee_type
+        ])
         session.flush()
 
         # Build Programs (Combination of Majors & Levels)
@@ -169,8 +179,9 @@ def seed_large_dataset(
             print(f"Processing Academic Year {label}...")
 
             year_classes = []
-            year_installments = {}       # program_id -> list of Installment objects (Tuition)
-            year_registration_fees = {}  # program_id -> Fee object (Registration)
+            year_installments = {}         # program_id -> list of Installment objects (Tuition)
+            year_registration_fees = {}    # program_id -> Fee object (Inscription)
+            year_re_enrollment_fees = {}  # program_id -> Fee object (Réinscription)
 
             for prog in programs:
                 # Group codes formatted like GIL1A, GEM1B, etc.
@@ -185,7 +196,7 @@ def seed_large_dataset(
                 )
                 year_classes.append(class_group)
 
-                # --- 4.1 Frais d'Inscription (Spécifique au programme) ---
+                # --- 4.1 Frais d'Inscription (Pour nouveaux étudiants) ---
                 reg_amount = float(random.choice([25000, 35000, 50000, 75000]))
                 reg_fee = Fee(
                     program_id=prog.id,
@@ -197,7 +208,19 @@ def seed_large_dataset(
                 session.add(reg_fee)
                 year_registration_fees[prog.id] = reg_fee
 
-                # --- 4.2 Frais de Scolarité ---
+                # --- 4.2 Frais de Réinscription (Généralement réduits) ---
+                re_reg_amount = reg_amount * 0.7  # 30% de réduction pour réinscription
+                re_reg_fee = Fee(
+                    program_id=prog.id,
+                    academic_year_id=academic_year.id,
+                    fee_type_id=re_enrollment_fee_type.id,
+                    amount=re_reg_amount,
+                    is_split=False,
+                )
+                session.add(re_reg_fee)
+                year_re_enrollment_fees[prog.id] = re_reg_fee
+
+                # --- 4.3 Frais de Scolarité ---
                 total_tuition = float(random.choice([500000, 600000, 750000]))
                 tuition_fee = Fee(
                     program_id=prog.id,
@@ -252,27 +275,32 @@ def seed_large_dataset(
                 session.add(enrollment)
                 session.flush()
 
-                # --- 5.1 Réglement des Frais d'Inscription au moment de l'inscription ---
-                reg_fee_obj = year_registration_fees[assigned_class.program_id]
-                reg_payment = Payment(
+                # --- 5.1 Sélection du montant des frais en fonction du type d'inscription ---
+                if enrollment_type == EnrollmentType.NEW:
+                    entry_fee_obj = year_registration_fees[assigned_class.program_id]
+                else:
+                    entry_fee_obj = year_re_enrollment_fees[assigned_class.program_id]
+
+                # --- 5.2 Réglement des Frais d'Inscription / Réinscription ---
+                entry_payment = Payment(
                     enrollment_id=enrollment.id,
-                    installment_id=None,  # Pas d'échéance mensuelle pour les frais d'inscription
+                    installment_id=None,
                     payment_date=enrollment_date,
                     payment_method=random.choice(list(PaymentMethod)),
-                    amount_paid=reg_fee_obj.amount,
+                    amount_paid=entry_fee_obj.amount,
                 )
-                session.add(reg_payment)
+                session.add(entry_payment)
                 session.flush()
 
-                reg_receipt = Receipt(
-                    payment_id=reg_payment.id,
+                entry_receipt = Receipt(
+                    payment_id=entry_payment.id,
                     receipt_number=receipt_counter,
                     receipt_date=enrollment_date,
                 )
                 receipt_counter += 1
-                session.add(reg_receipt)
+                session.add(entry_receipt)
 
-                # --- 5.2 Réglement des Mensualités de Scolarité ---
+                # --- 5.3 Réglement des Mensualités de Scolarité ---
                 prog_insts = year_installments[assigned_class.program_id]
                 
                 payment_behavior = random.choices(

@@ -1,18 +1,13 @@
 import customtkinter as ctk
-from .form.enrollment_form import EnrollmentFormFrame
-from .form.reenrollment_form import ReEnrollmentFormFrame
-
-ctk.set_appearance_mode("Dark")
-ctk.set_default_color_theme("blue")
+from .enrollment_form import EnrollmentFormFrame
+from .reenrollment_form import ReEnrollmentFormFrame
 
 
-class InscriptionPage(ctk.CTk):
-    def __init__(self):
-        super().__init__()
+class RegistrationForm(ctk.CTkFrame):
+    """Frame conteneur regroupant le formulaire d'inscription et de réinscription dans un système d'onglets."""
 
-        self.title("Système de Gestion Scolaire - Inscriptions & Réinscriptions")
-        self.geometry("1150x760")
-        self.configure(fg_color="#121927")
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, fg_color="#121927", *args, **kwargs)
 
         # --- GESTION DES ONGLETS (CTkTabview) ---
         self.tabview = ctk.CTkTabview(
@@ -31,11 +26,11 @@ class InscriptionPage(ctk.CTk):
         # Style de la police pour les boutons d'onglets
         self.tabview._segmented_button.configure(
             font=("Helvetica", 13, "bold"),
-            corner_radius=8,  # Bords carrés légèrement arrondis
-            height=45,  # Plus de hauteur pour un effet plus volumineux
+            corner_radius=8,
+            height=45,
         )
 
-        # Étendre la barre d'onglets sur toute la largeur disponible (3 colonnes pour 2 onglets)
+        # Étendre la barre d'onglets sur toute la largeur disponible
         self.tabview._segmented_button.grid(sticky="ew", padx=10, pady=10)
         self.tabview._segmented_button.grid_columnconfigure(0, weight=1)
         self.tabview._segmented_button.grid_columnconfigure(1, weight=1)
@@ -44,9 +39,9 @@ class InscriptionPage(ctk.CTk):
         tab_inscription = self.tabview.add("  NOUVELLE INSCRIPTION  ")
         tab_reinscription = self.tabview.add("  RÉINSCRIPTION  ")
 
-        # --- IMPORTATION ET EMBARQUEMENT DES COMPOSANTS ---
-        self.page_inscription = EnrollmentFormFrame(tab_inscription)
-        self.page_inscription.pack(fill="both", expand=True)
+        # --- EMBARQUEMENT DES FORMULAIRES ---
+        self.form_inscription = EnrollmentFormFrame(tab_inscription)
+        self.form_inscription.pack(fill="both", expand=True)
 
-        self.page_reinscription = ReEnrollmentFormFrame(tab_reinscription)
-        self.page_reinscription.pack(fill="both", expand=True)
+        self.form_reinscription = ReEnrollmentFormFrame(tab_reinscription)
+        self.form_reinscription.pack(fill="both", expand=True)
