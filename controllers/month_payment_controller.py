@@ -3,7 +3,7 @@ from tkinter import messagebox
 from typing import TYPE_CHECKING
 import webbrowser
 
-from database import get_session  # Importer la fabrique/gestionnaire de sessions
+from database import get_session
 from models import Month, PaymentMethod
 from services import MonthlyPaymentService
 from services.errors.exceptions import EtudiantNotFoundError, PaymentValidationError
@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 class MonthlyPaymentController:
     def __init__(self, view: "MonthlyPaymentFormFrame"):
         self.view = view
-        # Injection explicite de get_session comme session_factory
         self.service = MonthlyPaymentService(session_factory=get_session)
         self.current_student = None
         self.current_enrollment = None
@@ -98,7 +97,7 @@ class MonthlyPaymentController:
             for month in unpaid_months
         ]
 
-        # Envoi des données complètes à la vue
+        # Envoi des données à la vue
         self.view.display_student_info(
             student=student,
             enrollment=enrollment,
@@ -114,17 +113,16 @@ class MonthlyPaymentController:
             self.view.combo_month.set(month_values[0])
             self.view.btn_submit.configure(state="normal")
         else:
-            # Si plus aucun mois impayé
             self.view.combo_month.configure(values=["Tout est réglé"], state="disabled")
             self.view.combo_month.set("Tout est réglé")
             self.view.btn_submit.configure(state="disabled")
 
     def on_month_selected(self, selected_month):
-        """Action déclenchée lors du changement de mois dans le menu déroulant (si besoin)."""
+        """Action déclenchée lors du changement de mois dans le menu déroulant."""
         pass
 
     def process_payment(self):
-        """Traite le paiement en s'appuyant sur MonthlyPaymentService."""
+        """Traite le paiement en s'appuyant sur le service et retourne un DTO déconnecté de la BDD."""
         if not self.current_enrollment:
             messagebox.showwarning(
                 "Attention", "Veuillez d'abord rechercher un étudiant."
@@ -162,37 +160,24 @@ class MonthlyPaymentController:
             return
 
         try:
-            payment = self.service.record_payment(
+            # 1. Enregistrer le paiement : renvoie directement un ReceiptDTO
+            receipt_dto = self.service.record_payment(
                 enrollment=self.current_enrollment,
                 month_value=selected_month,
                 amount_paid=amount_to_pay,
                 payment_method_value=payment_method,
             )
 
-            # Rafraîchir immédiatement l'étudiant pour avoir les objets BDD liés et chargés proprement
+            # 2. Rafraîchir l'interface (IHM)
             self.search_student()
 
-            # Récupérer le reçu fraîchement chargé
-            matching_inst = next(
-                (
-                    inst
-                    for inst in self.current_installments
-                    if (
-                        inst["month"].value == selected_month
-                        if hasattr(inst["month"], "value")
-                        else str(inst["month"]) == selected_month
-                    )
-                ),
-                None,
-            )
-            receipt = matching_inst.get("receipt") if matching_inst else payment.receipt
-
-            pdf_path = generate_receipt_pdf(receipt, output_dir="receipts")
+            # 3. Génération du PDF grâce au DTO (indépendant des sessions SQLAlchemy)
+            pdf_path = generate_receipt_pdf(receipt_dto, output_dir="receipts")
 
             messagebox.showinfo(
                 "Paiement Validé",
                 f"Paiement de {amount_to_pay:,.0f} FCFA pour le mois de {selected_month} enregistré !\n"
-                f"Reçu N° REC-{receipt.receipt_number:05d}",
+                f"Reçu N° REC-{receipt_dto.receipt_number:05d}",
             )
 
             if os.path.exists(pdf_path):
@@ -204,12 +189,11 @@ class MonthlyPaymentController:
             messagebox.showerror("Erreur", f"Une erreur est survenue : {str(exc)}")
 
     def reprint_receipt(self, month_value: str):
-        """Permet de réimprimer le reçu d'un mois déjà réglé à partir des données pré-chargées."""
+        """Réimprime un reçu déjà enregistré."""
         if not self.current_installments:
             return
 
         try:
-            # On cherche le dictionnaire de l'échéance correspondant au mois sélectionné
             matching_inst = next(
                 (
                     inst
@@ -223,17 +207,16 @@ class MonthlyPaymentController:
                 None,
             )
 
-            receipt = matching_inst.get("receipt") if matching_inst else None
+            receipt_dto = matching_inst.get("receipt") if matching_inst else None
 
-            if not receipt:
+            if not receipt_dto:
                 messagebox.showerror(
                     "Reçu Introuvable",
                     f"Aucun reçu enregistré trouvé pour le mois de {month_value}.",
                 )
                 return
 
-            # Génération et ouverture du PDF sans aucune nouvelle requête SQL
-            pdf_path = generate_receipt_pdf(receipt, output_dir="receipts")
+            pdf_path = generate_receipt_pdf(receipt_dto, output_dir="receipts")
 
             if os.path.exists(pdf_path):
                 webbrowser.open(os.path.abspath(pdf_path))

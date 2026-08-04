@@ -1,38 +1,21 @@
+# utils.py
 import os
 from pathlib import Path
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from models import Receipt
+
+from models import ReceiptDTO
 
 
-def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
-    """Génère un reçu de paiement au format PDF avec ReportLab (100% Python)."""
-    payment = receipt.payment
-    enrollment = payment.enrollment
-    student = enrollment.student
-    installment = payment.installment
-    program = enrollment.class_group.program
-    academic_year = enrollment.academic_year
-
-    # --- CALCULS ---
-    total_program_fees = sum(
-        fee.amount for fee in program.fees if fee.academic_year_id == academic_year.id
-    )
-    total_paid_so_far = sum(p.amount_paid for p in enrollment.payments)
-    remaining_balance = max(0.0, total_program_fees - total_paid_so_far)
-    month_name = installment.month.value if installment else "N/A"
-    class_name = (
-        f"{program.major.name} - {program.level.name} ({enrollment.class_group.name})"
-    )
-
+def generate_receipt_pdf(receipt: ReceiptDTO, output_dir: str = "receipts") -> str:
+    """Génère un reçu de paiement au format PDF à partir d'un ReceiptDTO."""
     # --- PREPARATION DU DOCUMENT ---
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pdf_filename = f"Recu_{receipt.receipt_number:05d}_{student.last_name}.pdf"
+    pdf_filename = f"Recu_{receipt.receipt_number:05d}_{receipt.student_last_name}.pdf"
     pdf_path = os.path.join(output_dir, pdf_filename)
 
-    # Largeur utile A4 (595.27) minus marges (30x2) = 535.27 pt
     doc = SimpleDocTemplate(
         pdf_path,
         pagesize=A4,
@@ -43,7 +26,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     )
     story = []
 
-    # --- STYLES (avec 'leading' corrigés pour éviter la superposition) ---
+    # --- STYLES ---
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
@@ -68,7 +51,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
         fontName="Helvetica-Bold",
         fontSize=14,
         leading=16,
-        alignment=2,  # Alignement Droite
+        alignment=2,
         textColor=colors.HexColor("#2563EB"),
     )
     receipt_num_style = ParagraphStyle(
@@ -77,7 +60,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
         fontName="Helvetica-Bold",
         fontSize=9,
         leading=12,
-        alignment=2,  # Alignement Droite
+        alignment=2,
         textColor=colors.HexColor("#475569"),
     )
 
@@ -100,7 +83,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     value_right_style = ParagraphStyle(
         "ValueRight",
         parent=value_style,
-        alignment=2,  # Alignement Droite
+        alignment=2,
     )
 
     # --- EN-TÊTE ---
@@ -109,7 +92,9 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
             [
                 Paragraph("ÉTABLISSEMENT SCOLAIRE", title_style),
                 Spacer(1, 4),
-                Paragraph(f"Année Académique {academic_year.label}", sub_title_style),
+                Paragraph(
+                    f"Année Académique {receipt.academic_year_label}", sub_title_style
+                ),
             ],
             [
                 Paragraph("REÇU DE PAIEMENT", receipt_title_style),
@@ -137,21 +122,22 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     info_data = [
         [
             Paragraph("MATRICULE :", label_style),
-            Paragraph(student.student_id_number, value_style),
+            Paragraph(receipt.student_id_number, value_style),
             Paragraph("DATE DE PAIEMENT :", label_style),
-            Paragraph(payment.payment_date.strftime("%d/%m/%Y"), value_style),
+            Paragraph(receipt.payment_date.strftime("%d/%m/%Y"), value_style),
         ],
         [
             Paragraph("NOM & PRÉNOM :", label_style),
             Paragraph(
-                f"{student.last_name.upper()} {student.first_name.title()}", value_style
+                f"{receipt.student_last_name.upper()} {receipt.student_first_name.title()}",
+                value_style,
             ),
             Paragraph("MODE DE RÈGLEMENT :", label_style),
-            Paragraph(payment.payment_method.value, value_style),
+            Paragraph(receipt.payment_method, value_style),
         ],
         [
             Paragraph("CLASSE / PARCOURS :", label_style),
-            Paragraph(class_name, value_style),
+            Paragraph(receipt.class_name, value_style),
             "",
             "",
         ],
@@ -161,7 +147,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("SPAN", (1, 2), (3, 2)),  # Étendre la classe sur toute la ligne
+                ("SPAN", (1, 2), (3, 2)),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                 ("TOPPADDING", (0, 0), (-1, -1), 5),
             ]
@@ -175,8 +161,8 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
         ["Désignation", "Mois Réglé", "Montant Versé"],
         [
             "Règlement Mensualité de Scolarité",
-            month_name,
-            f"{payment.amount_paid:,.0f} FCFA",
+            receipt.month_name,
+            f"{receipt.amount_paid:,.0f} FCFA",
         ],
     ]
     details_table = Table(details_data, colWidths=[280, 120, 135])
@@ -202,15 +188,15 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     summary_data = [
         [
             Paragraph("Montant Global des Frais :", label_style),
-            Paragraph(f"{total_program_fees:,.0f} FCFA", value_right_style),
+            Paragraph(f"{receipt.total_program_fees:,.0f} FCFA", value_right_style),
         ],
         [
             Paragraph("Total Réglé à ce jour :", label_style),
-            Paragraph(f"{total_paid_so_far:,.0f} FCFA", value_right_style),
+            Paragraph(f"{receipt.total_paid_so_far:,.0f} FCFA", value_right_style),
         ],
         [
             Paragraph("Reste à Payer :", label_style),
-            Paragraph(f"{remaining_balance:,.0f} FCFA", value_right_style),
+            Paragraph(f"{receipt.remaining_balance:,.0f} FCFA", value_right_style),
         ],
     ]
     summary_table = Table(summary_data, colWidths=[350, 185])

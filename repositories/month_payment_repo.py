@@ -1,7 +1,5 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload, joinedload
-
-from database.session import get_session
 from models import (
     ClassGroup,
     Enrollment,
@@ -27,27 +25,14 @@ class MonthlyPaymentRepo(BaseRepo[Payment]):
         ).first()
 
     def get_enrollment_for_student(self, student: Student) -> Enrollment | None:
-        if not student.enrollments:
-            return None
+        # On va chercher directement l'inscription la plus récente en base SQL avec order_by
+        # sans passer par max() qui force du lazy-loading sur student.enrollments
+        from models import AcademicYear  # Import local si nécessaire
 
-        active_enrollments = [
-            enrollment
-            for enrollment in student.enrollments
-            if enrollment.status.name == "ACTIVE"
-        ]
-        if active_enrollments:
-            selected_enrollment = max(
-                active_enrollments,
-                key=lambda enrollment: enrollment.academic_year.start_date,
-            )
-        else:
-            selected_enrollment = max(
-                student.enrollments,
-                key=lambda enrollment: enrollment.academic_year.start_date,
-            )
-
-        return self.session.scalar(
+        stmt = (
             select(Enrollment)
+            .join(Enrollment.academic_year)
+            .where(Enrollment.student_id == student.id)
             .execution_options(populate_existing=True)
             .options(
                 # 1. Étudiant & Année Académique
@@ -61,7 +46,7 @@ class MonthlyPaymentRepo(BaseRepo[Payment]):
                     joinedload(Program.level),
                     selectinload(Program.fees).selectinload(Fee.installments),
                 ),
-                # 3. Arborescence des Paiements & Reçus (Paiement -> Reçu -> Enrollment -> Tout l'arbre)
+                # 3. Arborescence des Paiements & Reçus
                 selectinload(Enrollment.payments).options(
                     joinedload(Payment.installment),
                     joinedload(Payment.receipt)
@@ -82,8 +67,10 @@ class MonthlyPaymentRepo(BaseRepo[Payment]):
                     ),
                 ),
             )
-            .where(Enrollment.id == selected_enrollment.id)
+            .order_by(AcademicYear.start_date.desc())
         )
+
+        return self.session.scalar(stmt)
 
     def build_installment_summaries(self, enrollment: Enrollment):
         fee = self.get_tuition_fee(enrollment)

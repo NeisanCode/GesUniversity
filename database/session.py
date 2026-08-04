@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from config import DB_PATH
 
-
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(DATABASE_URL, echo=False)
 
@@ -24,10 +23,10 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
 
 @contextmanager
-def get_session() :
+def get_session():
     """À utiliser avec un context manager: `with get_session() as session:`"""
     session = SessionLocal()
     try:
         yield session  # Fournit la session au bloc 'with'
     finally:
-        session.close()  
+        session.close()
