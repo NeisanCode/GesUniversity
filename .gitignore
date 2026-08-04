@@ -1,4 +1,15 @@
-/receipts
-/.venv
-/.pytest_cache
+# Unecessary files
 *.txt
+# Unecessary folder
+/receipts
+
+# Virtual env
+/.venv
+
+# Python
+/.pytest_cache
+__pycache__/
+*.py[cod]
+
+# Base de données SQLite
+*.db

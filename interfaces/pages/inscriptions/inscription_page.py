@@ -6,7 +6,7 @@ ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
 
-class MainPageApp(ctk.CTk):
+class InscriptionPage(ctk.CTk):
     def __init__(self):
         super().__init__()
 

@@ -16,12 +16,9 @@ class EnrollmentFormFrame(ctk.CTkFrame):
         self.font_label = ("Helvetica", 12, "bold")
         self.font_entry = ("Helvetica", 12)
 
-        # Construction de la page
         self._create_left_column()
         self._create_right_column()
-
-        # Chargement des données dynamiques depuis la BDD via le Contrôleur !
-        self.controller.charger_options_initiales()
+        self.controller.load_initial_options()
 
     def _create_left_column(self):
         col_left = ctk.CTkFrame(self, fg_color="transparent")
@@ -30,7 +27,6 @@ class EnrollmentFormFrame(ctk.CTkFrame):
         self.create_title(col_left, "COORDONNÉES DE L'ÉTUDIANT")
         self.entry_nom = self.create_entry(col_left, "Nom :", "Saisir le nom")
         self.entry_prenom = self.create_entry(col_left, "Prénom :", "Saisir le prénom")
-        # Remplacement du champ date par le widget personnalisé
         self.date_picker = self.create_date_picker(col_left, "Date de naissance :")
         self.entry_email = self.create_entry(
             col_left, "Adresse Email :", "exemple@domaine.com"
@@ -44,9 +40,15 @@ class EnrollmentFormFrame(ctk.CTkFrame):
         col_right.grid(row=0, column=1, sticky="nsew", padx=20, pady=15)
 
         self.create_title(col_right, "ORIENTATION & PAIEMENT")
+
+        # --- Modifié : OptionMenu limité à l'année active (ou désactivé si souhaité) ---
         self.combo_annee = self.create_option_menu(
-            col_right, "Année Académique :", ["Sélectionner..."]
+            col_right, "Année Académique :", ["-- - --"]
         )
+        self.combo_annee.configure(
+            state="disabled"
+        )  # Désactive le menu déroulant pour empêcher la modification
+
         self.combo_filiere = self.create_option_menu(
             col_right, "Filière d'Études :", ["Sélectionner..."]
         )
@@ -59,7 +61,6 @@ class EnrollmentFormFrame(ctk.CTkFrame):
             col_right, "Mode de Paiement :", modes_paiement
         )
 
-        # Bannière Frais
         frame_frais = ctk.CTkFrame(
             col_right,
             fg_color="#f0fdf4",
@@ -70,12 +71,13 @@ class EnrollmentFormFrame(ctk.CTkFrame):
         )
         frame_frais.pack(fill="x", pady=(12, 12))
         frame_frais.pack_propagate(False)
-        ctk.CTkLabel(
+        self.fees_label = ctk.CTkLabel(
             frame_frais,
             text="Montant des frais d'inscription : -- FCFA",
-            font=("Helvetica", 11, "bold"),
+            font=("Helvetica", 15, "bold"),
             text_color="#15803d",
-        ).pack(expand=True)
+        )
+        self.fees_label.pack(expand=True)
 
         ctk.CTkButton(
             col_right,
@@ -86,10 +88,9 @@ class EnrollmentFormFrame(ctk.CTkFrame):
             height=45,
             corner_radius=8,
             font=("Helvetica", 12, "bold"),
-            command=self.controller.traiter_inscription,
+            command=self.controller.process_enrollment,
         ).pack(fill="x", pady=(10, 0))
 
-    # Utilitaires
     def create_title(self, parent, text):
         ctk.CTkLabel(
             parent, text=text, font=self.font_title, text_color="#3b82f6", anchor="w"
@@ -142,5 +143,5 @@ class EnrollmentFormFrame(ctk.CTkFrame):
     def create_date_picker(self, parent, label_text):
         """Crée un widget DatePicker personnalisé"""
         picker = DatePicker(parent, label_text, placeholder="AAAA-MM-JJ")
-        picker.pack(fill="x", pady=(0, 10))  # ← ajoutez cette ligne
+        picker.pack(fill="x", pady=(0, 10))
         return picker

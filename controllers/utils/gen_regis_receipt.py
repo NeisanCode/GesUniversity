@@ -1,35 +1,38 @@
 import os
+import webbrowser
 from pathlib import Path
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from models import Receipt
+
+# Import du DTO depuis ton module de service
+from services.enrollment_service import ReceiptDTO
 
 
-def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
-    """Génère un reçu de paiement au format PDF avec ReportLab (100% Python)."""
-    payment = receipt.payment
-    enrollment = payment.enrollment
-    student = enrollment.student
-    installment = payment.installment
-    program = enrollment.class_group.program
-    academic_year = enrollment.academic_year
-
-    # --- CALCULS ---
-    total_program_fees = sum(
-        fee.amount for fee in program.fees if fee.academic_year_id == academic_year.id
-    )
-    total_paid_so_far = sum(p.amount_paid for p in enrollment.payments)
-    remaining_balance = max(0.0, total_program_fees - total_paid_so_far)
-    month_name = installment.month.value if installment else "N/A"
+def gen_registration_pdf(
+    receipt: ReceiptDTO, 
+    output_dir: str = "receipts", 
+    auto_open: bool = True
+) -> str:
+    """Génère un reçu d'inscription au format PDF à partir d'un ReceiptDTO
+    
+    et l'ouvre automatiquement dans le navigateur.
+    """
+    
+    # Formate le nom complet de la classe à partir des données du DTO
     class_name = (
-        f"{program.major.name} - {program.level.name} ({enrollment.class_group.name})"
+        f"{receipt.major_name} - {receipt.level_name} ({receipt.class_group_name})"
     )
 
-    # --- PREPARATION DU DOCUMENT ---
+    # --- PRÉPARATION DU DOCUMENT ---
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pdf_filename = f"Recu_{receipt.receipt_number:05d}_{student.last_name}.pdf"
+    
+    # Nom du fichier nettoyé
+    safe_name = receipt.student_full_name.replace(" ", "_")
+    pdf_filename = (
+        f"Recu_Inscription_{receipt.receipt_number:05d}_{safe_name}.pdf"
+    )
     pdf_path = os.path.join(output_dir, pdf_filename)
 
     # Largeur utile A4 (595.27) minus marges (30x2) = 535.27 pt
@@ -43,7 +46,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     )
     story = []
 
-    # --- STYLES (avec 'leading' corrigés pour éviter la superposition) ---
+    # --- STYLES ---
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
@@ -109,13 +112,14 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
             [
                 Paragraph("ÉTABLISSEMENT SCOLAIRE", title_style),
                 Spacer(1, 4),
-                Paragraph(f"Année Académique {academic_year.label}", sub_title_style),
+                Paragraph(f"Année Académique {receipt.academic_year}", sub_title_style),
             ],
             [
-                Paragraph("REÇU DE PAIEMENT", receipt_title_style),
+                Paragraph("REÇU D'INSCRIPTION", receipt_title_style),
                 Spacer(1, 4),
                 Paragraph(
-                    f"N° REÇU : REC-{receipt.receipt_number:05d}", receipt_num_style
+                    f"N° INSCRIPTION : REC-{receipt.receipt_number:05d}",
+                    receipt_num_style,
                 ),
             ],
         ]
@@ -133,24 +137,22 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     story.append(header_table)
     story.append(Spacer(1, 15))
 
-    # --- INFOS ÉTUDIANT & PAIEMENT ---
+    # --- INFOS ÉTUDIANT & DATES ---
     info_data = [
         [
             Paragraph("MATRICULE :", label_style),
-            Paragraph(student.student_id_number, value_style),
-            Paragraph("DATE DE PAIEMENT :", label_style),
-            Paragraph(payment.payment_date.strftime("%d/%m/%Y"), value_style),
+            Paragraph(receipt.student_id_number, value_style),
+            Paragraph("DATE D'INSCRIPTION :", label_style),
+            Paragraph(receipt.receipt_date.strftime("%d/%m/%Y"), value_style),
         ],
         [
             Paragraph("NOM & PRÉNOM :", label_style),
-            Paragraph(
-                f"{student.last_name.upper()} {student.first_name.title()}", value_style
-            ),
+            Paragraph(receipt.student_full_name, value_style),
             Paragraph("MODE DE RÈGLEMENT :", label_style),
-            Paragraph(payment.payment_method.value, value_style),
+            Paragraph(receipt.payment_method, value_style),
         ],
         [
-            Paragraph("CLASSE / PARCOURS :", label_style),
+            Paragraph("CLASSE / FILIÈRE :", label_style),
             Paragraph(class_name, value_style),
             "",
             "",
@@ -161,7 +163,7 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("SPAN", (1, 2), (3, 2)),  # Étendre la classe sur toute la ligne
+                ("SPAN", (1, 2), (3, 2)),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                 ("TOPPADDING", (0, 0), (-1, -1), 5),
             ]
@@ -170,16 +172,16 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     story.append(info_table)
     story.append(Spacer(1, 15))
 
-    # --- TABLEAU DÉTAILS ---
+    # --- TABLEAU DÉTAILS DE L'INSCRIPTION ---
     details_data = [
-        ["Désignation", "Mois Réglé", "Montant Versé"],
+        ["Désignation", "Statut", "Montant Payé"],
         [
-            "Règlement Mensualité de Scolarité",
-            month_name,
-            f"{payment.amount_paid:,.0f} FCFA",
+            f"Frais d'inscription - {receipt.major_name} ({receipt.level_name})",
+            "VALIDE",
+            f"{receipt.amount_paid:,.0f} FCFA",
         ],
     ]
-    details_table = Table(details_data, colWidths=[280, 120, 135])
+    details_table = Table(details_data, colWidths=[310, 90, 135])
     details_table.setStyle(
         TableStyle(
             [
@@ -198,19 +200,11 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     story.append(details_table)
     story.append(Spacer(1, 15))
 
-    # --- RÉSUMÉ DES MONTANTS ---
+    # --- RÉSUMÉ DE L'INSCRIPTION ---
     summary_data = [
         [
-            Paragraph("Montant Global des Frais :", label_style),
-            Paragraph(f"{total_program_fees:,.0f} FCFA", value_right_style),
-        ],
-        [
-            Paragraph("Total Réglé à ce jour :", label_style),
-            Paragraph(f"{total_paid_so_far:,.0f} FCFA", value_right_style),
-        ],
-        [
-            Paragraph("Reste à Payer :", label_style),
-            Paragraph(f"{remaining_balance:,.0f} FCFA", value_right_style),
+            Paragraph("Total Frais d'Inscription Acquittés :", label_style),
+            Paragraph(f"{receipt.amount_paid:,.0f} FCFA", value_right_style),
         ],
     ]
     summary_table = Table(summary_data, colWidths=[350, 185])
@@ -220,8 +214,8 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
                 ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
             ]
         )
     )
@@ -245,6 +239,12 @@ def generate_receipt_pdf(receipt: Receipt, output_dir: str = "receipts") -> str:
     )
     story.append(sig_table)
 
-    # Generation
+    # Génération du fichier PDF
     doc.build(story)
+
+    # --- OUVERTURE DANS LE NAVIGATEUR ---
+    if auto_open:
+        absolute_path = Path(pdf_path).resolve()
+        webbrowser.open(absolute_path.as_uri())
+
     return pdf_path
