@@ -38,7 +38,7 @@ fake = Faker("fr_FR")
 def seed_large_dataset(
     num_students: int = 300,
     start_year: int = 2024,
-    years_count: int = 3,
+    years_count: int = 5,
 ):
     """
     Generates a large volume of relational data.
@@ -82,11 +82,21 @@ def seed_large_dataset(
         level_by_id = {l.id: levels_map[l.name] for l in levels}
 
         # ----------------------------------------------------
-        # 2. Fee Types
+        # 2. Fee Types (Ajout des frais d'inscription et de réinscription)
         # ----------------------------------------------------
         tuition_fee_type = FeeType(
             name="Frais de Scolarité",
             code="TUITION_FEE",
+            is_system=True,
+        )
+        registration_fee_type = FeeType(
+            name="Frais d'Inscription",
+            code="REGISTRATION_FEE",
+            is_system=True,
+        )
+        re_enrollment_fee_type = FeeType(
+            name="Frais de Réinscription",
+            code="RE_ENROLLMENT_FEE",
             is_system=True,
         )
         library_fee_type = FeeType(
@@ -94,7 +104,12 @@ def seed_large_dataset(
             code="LIBRARY_FEE",
             is_system=False,
         )
-        session.add_all([tuition_fee_type, library_fee_type])
+        session.add_all([
+            tuition_fee_type, 
+            registration_fee_type, 
+            re_enrollment_fee_type, 
+            library_fee_type
+        ])
         session.flush()
 
         # Build Programs (Combination of Majors & Levels)
@@ -149,8 +164,15 @@ def seed_large_dataset(
             year_end = year_start + 1
             label = f"{year_start} - {year_end}"  # e.g., 2024 - 2025
             
-            is_current_year = y_idx == (years_count - 1)
-            status = AcademicYearStatus.ACTIVE if is_current_year else AcademicYearStatus.COMPLETED
+            # Gestion correcte du statut des années académiques
+            if year_start < 2026:
+                status = AcademicYearStatus.COMPLETED
+            elif year_start == 2026:
+                status = AcademicYearStatus.ACTIVE
+            else:
+                # Utilisation du statut UPCOMING pour les années futures (2027+, etc.)
+                # Si UPCOMING n'existe pas dans ton Enum, remplace par AcademicYearStatus.ACTIVE ou autre valeur valide dans tes models
+                status = getattr(AcademicYearStatus, 'UPCOMING', AcademicYearStatus.ACTIVE)
 
             academic_year = AcademicYear(
                 label=label,
@@ -164,7 +186,9 @@ def seed_large_dataset(
             print(f"Processing Academic Year {label}...")
 
             year_classes = []
-            year_installments = {}  # program_id -> list of Installment objects
+            year_installments = {}         # program_id -> list of Installment objects (Tuition)
+            year_registration_fees = {}    # program_id -> Fee object (Inscription)
+            year_re_enrollment_fees = {}  # program_id -> Fee object (Réinscription)
 
             for prog in programs:
                 # Group codes formatted like GIL1A, GEM1B, etc.
@@ -179,25 +203,49 @@ def seed_large_dataset(
                 )
                 year_classes.append(class_group)
 
-                # Fee Structure
+                # --- 4.1 Frais d'Inscription ---
+                reg_amount = float(random.choice([25000, 35000, 50000, 75000]))
+                reg_fee = Fee(
+                    program_id=prog.id,
+                    academic_year_id=academic_year.id,
+                    fee_type_id=registration_fee_type.id,
+                    amount=reg_amount,
+                    is_split=False,
+                )
+                session.add(reg_fee)
+                year_registration_fees[prog.id] = reg_fee
+
+                # --- 4.2 Frais de Réinscription ---
+                re_reg_amount = reg_amount * 0.7  # 30% de réduction pour réinscription
+                re_reg_fee = Fee(
+                    program_id=prog.id,
+                    academic_year_id=academic_year.id,
+                    fee_type_id=re_enrollment_fee_type.id,
+                    amount=re_reg_amount,
+                    is_split=False,
+                )
+                session.add(re_reg_fee)
+                year_re_enrollment_fees[prog.id] = re_reg_fee
+
+                # --- 4.3 Frais de Scolarité ---
                 total_tuition = float(random.choice([500000, 600000, 750000]))
-                fee = Fee(
+                tuition_fee = Fee(
                     program_id=prog.id,
                     academic_year_id=academic_year.id,
                     fee_type_id=tuition_fee_type.id,
                     amount=total_tuition,
                     is_split=True,
                 )
-                session.add(fee)
+                session.add(tuition_fee)
                 session.flush()
 
-                # Generate 10 Monthly Installments (Equal payments per month)
+                # Generate 10 Monthly Installments for Tuition
                 monthly_amount = total_tuition / len(academic_months)
                 
                 prog_installments = []
                 for m in academic_months:
                     inst = Installment(
-                        fee_id=fee.id,
+                        fee_id=tuition_fee.id,
                         month=m,
                         amount=monthly_amount,
                     )
@@ -213,64 +261,92 @@ def seed_large_dataset(
             # ----------------------------------------------------
             # 5. Enroll Students & Generate Payments
             # ----------------------------------------------------
-            active_students = random.sample(
-                all_created_students, 
-                k=int(num_students * random.uniform(0.6, 0.9))
-            )
-
-            for student in active_students:
-                assigned_class = random.choice(year_classes)
-                enrollment_type = random.choice([EnrollmentType.NEW, EnrollmentType.RE_ENROLLMENT])
-                
-                enrollment = Enrollment(
-                    student_id=student.id,
-                    academic_year_id=academic_year.id,
-                    class_group_id=assigned_class.id,
-                    enrollment_date=date(year_start, 9, random.randint(1, 28)),
-                    enrollment_type=enrollment_type,
-                    status=EnrollmentStatus.ACTIVE,
-                )
-                session.add(enrollment)
-                session.flush()
-
-                # Pick installments to pay (Simulating FULL, PARTIAL, or UNPAID students)
-                prog_insts = year_installments[assigned_class.program_id]
-                
-                payment_behavior = random.choices(
-                    population=["FULL", "PARTIAL", "NONE"],
-                    weights=[0.6, 0.3, 0.1],
-                    k=1
-                )[0]
-
-                if payment_behavior == "NONE":
-                    continue
-
-                installments_to_pay = (
-                    prog_insts if payment_behavior == "FULL" 
-                    else prog_insts[:random.randint(1, len(prog_insts) - 1)]
+            # Génère des inscriptions principalement pour les années passées et en cours
+            if year_start <= 2026:
+                active_students = random.sample(
+                    all_created_students, 
+                    k=int(num_students * random.uniform(0.6, 0.9))
                 )
 
-                for inst in installments_to_pay:
-                    pay_method = random.choice(list(PaymentMethod))
-                    pay_date = date(year_start, 10, 10) + timedelta(days=random.randint(0, 180))
+                for student in active_students:
+                    assigned_class = random.choice(year_classes)
+                    enrollment_type = random.choice([EnrollmentType.NEW, EnrollmentType.RE_ENROLLMENT])
+                    enrollment_date = date(year_start, 9, random.randint(1, 28))
 
-                    payment = Payment(
-                        enrollment_id=enrollment.id,
-                        installment_id=inst.id,
-                        payment_date=pay_date,
-                        payment_method=pay_method,
-                        amount_paid=inst.amount,
+                    enrollment = Enrollment(
+                        student_id=student.id,
+                        academic_year_id=academic_year.id,
+                        class_group_id=assigned_class.id,
+                        enrollment_date=enrollment_date,
+                        enrollment_type=enrollment_type,
+                        status=EnrollmentStatus.ACTIVE,
                     )
-                    session.add(payment)
+                    session.add(enrollment)
                     session.flush()
 
-                    receipt = Receipt(
-                        payment_id=payment.id,
+                    # --- 5.1 Sélection du montant des frais ---
+                    if enrollment_type == EnrollmentType.NEW:
+                        entry_fee_obj = year_registration_fees[assigned_class.program_id]
+                    else:
+                        entry_fee_obj = year_re_enrollment_fees[assigned_class.program_id]
+
+                    # --- 5.2 Réglement des Frais d'Inscription / Réinscription ---
+                    entry_payment = Payment(
+                        enrollment_id=enrollment.id,
+                        installment_id=None,
+                        payment_date=enrollment_date,
+                        payment_method=random.choice(list(PaymentMethod)),
+                        amount_paid=entry_fee_obj.amount,
+                    )
+                    session.add(entry_payment)
+                    session.flush()
+
+                    entry_receipt = Receipt(
+                        payment_id=entry_payment.id,
                         receipt_number=receipt_counter,
-                        receipt_date=pay_date,
+                        receipt_date=enrollment_date,
                     )
                     receipt_counter += 1
-                    session.add(receipt)
+                    session.add(entry_receipt)
+
+                    # --- 5.3 Réglement des Mensualités de Scolarité ---
+                    prog_insts = year_installments[assigned_class.program_id]
+                    
+                    payment_behavior = random.choices(
+                        population=["FULL", "PARTIAL", "NONE"],
+                        weights=[0.6, 0.3, 0.1],
+                        k=1
+                    )[0]
+
+                    if payment_behavior == "NONE":
+                        continue
+
+                    installments_to_pay = (
+                        prog_insts if payment_behavior == "FULL" 
+                        else prog_insts[:random.randint(1, len(prog_insts) - 1)]
+                    )
+
+                    for inst in installments_to_pay:
+                        pay_method = random.choice(list(PaymentMethod))
+                        pay_date = date(year_start, 10, 10) + timedelta(days=random.randint(0, 180))
+
+                        payment = Payment(
+                            enrollment_id=enrollment.id,
+                            installment_id=inst.id,
+                            payment_date=pay_date,
+                            payment_method=pay_method,
+                            amount_paid=inst.amount,
+                        )
+                        session.add(payment)
+                        session.flush()
+
+                        receipt = Receipt(
+                            payment_id=payment.id,
+                            receipt_number=receipt_counter,
+                            receipt_date=pay_date,
+                        )
+                        receipt_counter += 1
+                        session.add(receipt)
 
         # ----------------------------------------------------
         # 6. Commit Everything
@@ -284,5 +360,6 @@ if __name__ == "__main__":
     seed_large_dataset(
         num_students=100,
         start_year=2024,
-        years_count=3,
+        years_count=5,
     )
+
