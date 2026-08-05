@@ -36,12 +36,12 @@ class RegistrationForm(ctk.CTkFrame):
         self.tabview._segmented_button.grid_columnconfigure(1, weight=1)
 
         # Création des onglets
-        tab_inscription = self.tabview.add("  NOUVELLE INSCRIPTION  ")
-        tab_reinscription = self.tabview.add("  RÉINSCRIPTION  ")
+        tab_enrollment = self.tabview.add("  NOUVELLE INSCRIPTION  ")
+        tab_reenrollment = self.tabview.add("  RÉINSCRIPTION  ")
 
         # --- EMBARQUEMENT DES FORMULAIRES ---
-        self.form_inscription = EnrollmentFormFrame(tab_inscription)
-        self.form_inscription.pack(fill="both", expand=True)
+        self.form_enrollment = EnrollmentFormFrame(tab_enrollment)
+        self.form_enrollment.pack(fill="both", expand=True)
 
-        self.form_reinscription = ReEnrollmentFormFrame(tab_reinscription)
-        self.form_reinscription.pack(fill="both", expand=True)
+        self.form_reenrollment = ReEnrollmentFormFrame(tab_reenrollment)
+        self.form_reenrollment.pack(fill="both", expand=True)

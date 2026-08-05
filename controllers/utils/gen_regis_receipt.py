@@ -6,8 +6,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 
-# Import du DTO depuis ton module de service
-from services.enrollment_service import ReceiptDTO
+
 
 
 def gen_registration_pdf(
