@@ -1,3 +1,2 @@
+from .enrollment_service import EnrollmentService
 from .reenrollment_service import ReEnrollmentService
-
-
