@@ -1,6 +1,3 @@
-# Unecessary files
-*.txt
-# Unecessary folder
 /receipts
 
 # Virtual env

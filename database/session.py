@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from config import DB_PATH
 
-
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(DATABASE_URL, echo=False)
 
