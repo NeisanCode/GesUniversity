@@ -3,3 +3,4 @@ from .reenrollment_service import ReEnrollmentService
 from .month_payment_service import MonthlyPaymentService
 from .student_list_service import StudentListService
 
+from .payment_stat_service import PaymentStatsService
