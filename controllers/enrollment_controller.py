@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from database import get_session
 from services import EnrollmentService
 from models import StudentDTO
-from .utils import gen_registration_pdf
+from .utils import generate_registration_pdf
 
 if TYPE_CHECKING:
     from interfaces import EnrollmentFormFrame
@@ -82,7 +82,7 @@ class EnrollmentController:
 
             # 2. Génération du reçu d'inscription au format PDF
             receipt_obj = result["receipt"]
-            pdf_path = gen_registration_pdf(receipt_obj)
+            pdf_path = generate_registration_pdf(receipt_obj)
 
         except Exception as exc:
             messagebox.showerror(
