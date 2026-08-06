@@ -6,11 +6,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 
-from models import ReceiptDTO
+from models import RegistrationReceiptDTO
 
 
 def generate_reregistration_pdf(
-    receipt: ReceiptDTO, output_dir: str = "receipts", auto_open: bool = True
+    receipt: RegistrationReceiptDTO, output_dir: str = "receipts", auto_open: bool = True
 ) -> str:
     """Génère un reçu de réinscription propre, moderne et parfaitement aligné au format PDF
     et l'ouvre automatiquement dans le navigateur/lecteur PDF.

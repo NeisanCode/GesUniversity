@@ -13,7 +13,7 @@ from models import (
     PaymentMethod,
     Receipt,
     Student,
-    ReceiptDTO,
+    RegistrationReceiptDTO,
 )
 from repositories.enrollment_repo import EnrollmentRepo
 from services.errors.exceptions import (
@@ -149,7 +149,7 @@ class EnrollmentService:
                 session.rollback()
                 raise
 
-    def _map_to_receipt_dto(self, receipt: Receipt) -> ReceiptDTO:
+    def _map_to_receipt_dto(self, receipt: Receipt) -> RegistrationReceiptDTO:
         """Convertit une entité SQLAlchemy Receipt en un DTO pur Python."""
         payment = receipt.payment
         enrollment = payment.enrollment
@@ -157,7 +157,7 @@ class EnrollmentService:
         class_group = enrollment.class_group
         program = class_group.program
 
-        return ReceiptDTO(
+        return RegistrationReceiptDTO(
             receipt_number=receipt.receipt_number,
             receipt_date=receipt.receipt_date,
             student_id_number=student.student_id_number,

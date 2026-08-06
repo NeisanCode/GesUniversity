@@ -1,2 +1,3 @@
 from .generate_registration_pdf import generate_registration_pdf
 from .genenrate_reregistation_pdf import generate_reregistration_pdf
+from .generate_pdf_month_payment import generate_pdf_month_payment

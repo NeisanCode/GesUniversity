@@ -5,19 +5,18 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-
-from models import ReceiptDTO
+from models import RegistrationReceiptDTO
 
 
 def generate_registration_pdf(
-    receipt: ReceiptDTO, 
-    output_dir: str = "receipts", 
-    auto_open: bool = True
+    receipt: RegistrationReceiptDTO,
+    output_dir: str = "receipts",
+    auto_open: bool = True,
 ) -> str:
     """Génère un reçu d'inscription propre, moderne et parfaitement aligné au format PDF
     et l'ouvre automatiquement dans le navigateur si spécifié.
     """
-    
+
     # Formate le nom complet de la classe à partir des données du DTO
     class_name = (
         f"{receipt.major_name} - {receipt.level_name} ({receipt.class_group_name})"
@@ -25,11 +24,9 @@ def generate_registration_pdf(
 
     # --- PRÉPARATION DU DOCUMENT ---
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    
+
     safe_name = receipt.student_full_name.replace(" ", "_")
-    pdf_filename = (
-        f"Recu_Inscription_{receipt.receipt_number:05d}_{safe_name}.pdf"
-    )
+    pdf_filename = f"Recu_Inscription_{receipt.receipt_number:05d}_{safe_name}.pdf"
     pdf_path = os.path.join(output_dir, pdf_filename)
 
     # Dimensions A4 : 595.27 x 841.89 pt
@@ -45,13 +42,13 @@ def generate_registration_pdf(
     story = []
 
     # --- PALETTE DE COULEURS PROFESSIONNELLE ---
-    PRIMARY_COLOR = colors.HexColor("#1E3A8A")    # Bleu Marine
-    ACCENT_COLOR = colors.HexColor("#2563EB")     # Bleu Dynamique
-    TEXT_DARK = colors.HexColor("#0F172A")        # Slate 900
-    TEXT_MUTED = colors.HexColor("#64748B")       # Slate 500
-    BG_LIGHT = colors.HexColor("#F8FAFC")         # Slate 50
-    BG_HEADER = colors.HexColor("#F1F5F9")        # Slate 100
-    BORDER_COLOR = colors.HexColor("#E2E8F0")     # Slate 200
+    PRIMARY_COLOR = colors.HexColor("#1E3A8A")  # Bleu Marine
+    ACCENT_COLOR = colors.HexColor("#2563EB")  # Bleu Dynamique
+    TEXT_DARK = colors.HexColor("#0F172A")  # Slate 900
+    TEXT_MUTED = colors.HexColor("#64748B")  # Slate 500
+    BG_LIGHT = colors.HexColor("#F8FAFC")  # Slate 50
+    BG_HEADER = colors.HexColor("#F1F5F9")  # Slate 100
+    BORDER_COLOR = colors.HexColor("#E2E8F0")  # Slate 200
 
     styles = getSampleStyleSheet()
 
@@ -154,18 +151,27 @@ def generate_registration_pdf(
         [
             [
                 Paragraph("INSTITUT SUPÉRIEUR", title_style),
-Paragraph("POLYTECHNIQUE SAINTE LUCIE D'OYO", title_style),
+                Paragraph("POLYTECHNIQUE SAINTE LUCIE D'OYO", title_style),
                 Spacer(1, 3),
                 Paragraph("Rigueur — Réussite — Innovation", motto_style),
                 Spacer(1, 4),
-                Paragraph(f"Année Académique : <b>{receipt.academic_year}</b>", sub_title_style),
+                Paragraph(
+                    f"Année Académique : <b>{receipt.academic_year}</b>",
+                    sub_title_style,
+                ),
             ],
             [
                 Paragraph("REÇU D'INSCRIPTION", receipt_title_style),
                 Spacer(1, 4),
-                Paragraph(f"N° INSCRIPTION : REC-{receipt.receipt_number:05d}", receipt_num_style),
+                Paragraph(
+                    f"N° INSCRIPTION : REC-{receipt.receipt_number:05d}",
+                    receipt_num_style,
+                ),
                 Spacer(1, 4),
-                Paragraph(f"Date : <b>{receipt.receipt_date.strftime('%d/%m/%Y')}</b>", value_right_style),
+                Paragraph(
+                    f"Date : <b>{receipt.receipt_date.strftime('%d/%m/%Y')}</b>",
+                    value_right_style,
+                ),
             ],
         ]
     ]
@@ -235,8 +241,14 @@ Paragraph("POLYTECHNIQUE SAINTE LUCIE D'OYO", title_style),
             Paragraph("Montant Payé", tbl_header_right),
         ],
         [
-            Paragraph(f"Frais d'inscription - {receipt.major_name} ({receipt.level_name})", value_style),
-            Paragraph("<font color='#166534'><b>VALIDE</b></font>", ParagraphStyle("CenterVal", parent=value_style, alignment=1)),
+            Paragraph(
+                f"Frais d'inscription - {receipt.major_name} ({receipt.level_name})",
+                value_style,
+            ),
+            Paragraph(
+                "<font color='#166534'><b>VALIDE</b></font>",
+                ParagraphStyle("CenterVal", parent=value_style, alignment=1),
+            ),
             Paragraph(f"<b>{receipt.amount_paid:,.0f} FCFA</b>", value_right_style),
         ],
     ]
@@ -262,8 +274,16 @@ Paragraph("POLYTECHNIQUE SAINTE LUCIE D'OYO", title_style),
     # Largeur : 343 + 180 = 523 pt
     summary_data = [
         [
-            Paragraph("Total Frais d'Inscription Acquittés :", ParagraphStyle("SoldeLabel", parent=label_style, textColor=PRIMARY_COLOR)),
-            Paragraph(f"<font color='#2563EB'><b>{receipt.amount_paid:,.0f} FCFA</b></font>", value_right_style),
+            Paragraph(
+                "Total Frais d'Inscription Acquittés :",
+                ParagraphStyle(
+                    "SoldeLabel", parent=label_style, textColor=PRIMARY_COLOR
+                ),
+            ),
+            Paragraph(
+                f"<font color='#2563EB'><b>{receipt.amount_paid:,.0f} FCFA</b></font>",
+                value_right_style,
+            ),
         ],
     ]
     summary_table = Table(summary_data, colWidths=[343, 180])
@@ -288,7 +308,10 @@ Paragraph("POLYTECHNIQUE SAINTE LUCIE D'OYO", title_style),
     sig_data = [
         [
             Paragraph("<b>Signature de l'Élève / Étudiant</b>", label_style),
-            Paragraph("<b>LA GESTIONNAIRE</b>", ParagraphStyle("RightLabel", parent=label_style, alignment=2)),
+            Paragraph(
+                "<b>LA GESTIONNAIRE</b>",
+                ParagraphStyle("RightLabel", parent=label_style, alignment=2),
+            ),
         ]
     ]
     sig_table = Table(sig_data, colWidths=[261.5, 261.5])

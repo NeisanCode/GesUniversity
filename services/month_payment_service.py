@@ -2,8 +2,8 @@ from datetime import date
 from typing import Callable
 from sqlalchemy.orm import Session
 
-from models import ReceiptDTO
-from models import Enrollment, Month, Payment, PaymentMethod, Receipt, Student
+from models import PaymentReceiptDTO
+from models import Enrollment, Month, Payment, PaymentMethod, Receipt
 from repositories import MonthlyPaymentRepo
 from services.errors.exceptions import EtudiantNotFoundError, PaymentValidationError
 
@@ -50,7 +50,7 @@ class MonthlyPaymentService:
         month_value,
         amount_paid: float,
         payment_method_value: str,
-    ) -> ReceiptDTO:
+    ) -> PaymentReceiptDTO:
         with self.session_factory() as session:
             repo = MonthlyPaymentRepo(session)
 
@@ -100,7 +100,7 @@ class MonthlyPaymentService:
             # Retourner directement un ReceiptDTO immunisé contre les erreurs de session
             return self._map_receipt_to_dto(receipt, active_enrollment)
 
-    def _map_receipt_to_dto(self, receipt: Receipt, enrollment: Enrollment) -> ReceiptDTO:
+    def _map_receipt_to_dto(self, receipt: Receipt, enrollment: Enrollment) -> PaymentReceiptDTO:
         """Helper privé pour transformer une entité ORM Receipt en ReceiptDTO sécurisé."""
         program = enrollment.class_group.program
         academic_year = enrollment.academic_year
@@ -122,7 +122,7 @@ class MonthlyPaymentService:
                 else str(installment.month)
             )
 
-        return ReceiptDTO(
+        return PaymentReceiptDTO(
             receipt_number=receipt.receipt_number,
             receipt_date=receipt.receipt_date,
             student_id_number=enrollment.student.student_id_number,

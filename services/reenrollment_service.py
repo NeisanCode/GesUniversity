@@ -11,7 +11,7 @@ from models import (
     Receipt,
     PaymentMethod,
 )
-from models.models_dto import ReceiptDTO
+from models.models_dto import RegistrationReceiptDTO
 from repositories import ReEnrollmentRepo
 from services.errors.exceptions import EtudiantNotFoundError, EnrollmentValidationError
 
@@ -72,7 +72,7 @@ class ReEnrollmentService:
         major_name: str,
         level_name: str,
         payment_method: str,
-    ) -> ReceiptDTO:
+    ) -> RegistrationReceiptDTO:
         with self.session_factory() as session:
             repo = ReEnrollmentRepo(session)
 
@@ -141,7 +141,7 @@ class ReEnrollmentService:
             session.commit()
 
             # Alignement complet avec le ReceiptDTO
-            return ReceiptDTO(
+            return RegistrationReceiptDTO(
                 receipt_number=receipt_num,
                 receipt_date=receipt.receipt_date,
                 student_id_number=student.student_id_number,
