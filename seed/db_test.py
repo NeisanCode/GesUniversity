@@ -42,7 +42,7 @@ def seed_large_dataset(
 ):
     """
     Generates a large volume of relational data.
-    
+
     :param num_students: Total number of unique students to generate.
     :param start_year: The starting calendar year for academic cycles.
     :param years_count: How many consecutive academic years to generate.
@@ -63,7 +63,7 @@ def seed_large_dataset(
             "Marketing Digital": "MD",
             "Comptabilité & Finance": "CF",
         }
-        
+
         levels_map = {
             "Licence 1": "L1",
             "Licence 2": "L2",
@@ -104,12 +104,14 @@ def seed_large_dataset(
             code="LIBRARY_FEE",
             is_system=False,
         )
-        session.add_all([
-            tuition_fee_type, 
-            registration_fee_type, 
-            re_enrollment_fee_type, 
-            library_fee_type
-        ])
+        session.add_all(
+            [
+                tuition_fee_type,
+                registration_fee_type,
+                re_enrollment_fee_type,
+                library_fee_type,
+            ]
+        )
         session.flush()
 
         # Build Programs (Combination of Majors & Levels)
@@ -162,17 +164,17 @@ def seed_large_dataset(
         for y_idx in range(years_count):
             year_start = start_year + y_idx
             year_end = year_start + 1
-            label = f"{year_start} - {year_end}"  # e.g., 2024 - 2025
-            
-            # Gestion correcte du statut des années académiques
-            if year_start < 2026:
-                status = AcademicYearStatus.COMPLETED
-            elif year_start == 2026:
+            label = f"{year_start} - {year_end}"  # ex: 2024 - 2025
+
+            # Si l'année dépasse l'année courante (2026), on stoppe la génération
+            if year_start > 2026:
+                break
+
+            # Définition du statut : seule l'année 2026 est ACTIVE, les précédentes sont COMPLETED
+            if year_start == 2026:
                 status = AcademicYearStatus.ACTIVE
             else:
-                # Utilisation du statut UPCOMING pour les années futures (2027+, etc.)
-                # Si UPCOMING n'existe pas dans ton Enum, remplace par AcademicYearStatus.ACTIVE ou autre valeur valide dans tes models
-                status = getattr(AcademicYearStatus, 'UPCOMING', AcademicYearStatus.ACTIVE)
+                status = AcademicYearStatus.COMPLETED
 
             academic_year = AcademicYear(
                 label=label,
@@ -186,8 +188,10 @@ def seed_large_dataset(
             print(f"Processing Academic Year {label}...")
 
             year_classes = []
-            year_installments = {}         # program_id -> list of Installment objects (Tuition)
-            year_registration_fees = {}    # program_id -> Fee object (Inscription)
+            year_installments = (
+                {}
+            )  # program_id -> list of Installment objects (Tuition)
+            year_registration_fees = {}  # program_id -> Fee object (Inscription)
             year_re_enrollment_fees = {}  # program_id -> Fee object (Réinscription)
 
             for prog in programs:
@@ -195,7 +199,7 @@ def seed_large_dataset(
                 major_code = major_by_id[prog.major_id]
                 level_code = level_by_id[prog.level_id]
                 section_letter = random.choice(["A", "B"])
-                
+
                 class_group = ClassGroup(
                     name=f"{major_code}{level_code}{section_letter}",
                     program_id=prog.id,
@@ -241,7 +245,7 @@ def seed_large_dataset(
 
                 # Generate 10 Monthly Installments for Tuition
                 monthly_amount = total_tuition / len(academic_months)
-                
+
                 prog_installments = []
                 for m in academic_months:
                     inst = Installment(
@@ -250,7 +254,7 @@ def seed_large_dataset(
                         amount=monthly_amount,
                     )
                     prog_installments.append(inst)
-                
+
                 session.add_all(prog_installments)
                 session.flush()
                 year_installments[prog.id] = prog_installments
@@ -264,13 +268,14 @@ def seed_large_dataset(
             # Génère des inscriptions principalement pour les années passées et en cours
             if year_start <= 2026:
                 active_students = random.sample(
-                    all_created_students, 
-                    k=int(num_students * random.uniform(0.6, 0.9))
+                    all_created_students, k=int(num_students * random.uniform(0.6, 0.9))
                 )
 
                 for student in active_students:
                     assigned_class = random.choice(year_classes)
-                    enrollment_type = random.choice([EnrollmentType.NEW, EnrollmentType.RE_ENROLLMENT])
+                    enrollment_type = random.choice(
+                        [EnrollmentType.NEW, EnrollmentType.RE_ENROLLMENT]
+                    )
                     enrollment_date = date(year_start, 9, random.randint(1, 28))
 
                     enrollment = Enrollment(
@@ -286,9 +291,13 @@ def seed_large_dataset(
 
                     # --- 5.1 Sélection du montant des frais ---
                     if enrollment_type == EnrollmentType.NEW:
-                        entry_fee_obj = year_registration_fees[assigned_class.program_id]
+                        entry_fee_obj = year_registration_fees[
+                            assigned_class.program_id
+                        ]
                     else:
-                        entry_fee_obj = year_re_enrollment_fees[assigned_class.program_id]
+                        entry_fee_obj = year_re_enrollment_fees[
+                            assigned_class.program_id
+                        ]
 
                     # --- 5.2 Réglement des Frais d'Inscription / Réinscription ---
                     entry_payment = Payment(
@@ -311,24 +320,27 @@ def seed_large_dataset(
 
                     # --- 5.3 Réglement des Mensualités de Scolarité ---
                     prog_insts = year_installments[assigned_class.program_id]
-                    
+
                     payment_behavior = random.choices(
                         population=["FULL", "PARTIAL", "NONE"],
                         weights=[0.6, 0.3, 0.1],
-                        k=1
+                        k=1,
                     )[0]
 
                     if payment_behavior == "NONE":
                         continue
 
                     installments_to_pay = (
-                        prog_insts if payment_behavior == "FULL" 
-                        else prog_insts[:random.randint(1, len(prog_insts) - 1)]
+                        prog_insts
+                        if payment_behavior == "FULL"
+                        else prog_insts[: random.randint(1, len(prog_insts) - 1)]
                     )
 
                     for inst in installments_to_pay:
                         pay_method = random.choice(list(PaymentMethod))
-                        pay_date = date(year_start, 10, 10) + timedelta(days=random.randint(0, 180))
+                        pay_date = date(year_start, 10, 10) + timedelta(
+                            days=random.randint(0, 180)
+                        )
 
                         payment = Payment(
                             enrollment_id=enrollment.id,
@@ -362,4 +374,3 @@ if __name__ == "__main__":
         start_year=2024,
         years_count=5,
     )
-
