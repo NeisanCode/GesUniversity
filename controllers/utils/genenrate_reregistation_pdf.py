@@ -9,7 +9,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from models import ReceiptDTO
 
 
-def gen_reregistration_pdf(
+def generate_reregistration_pdf(
     receipt: ReceiptDTO, output_dir: str = "receipts", auto_open: bool = True
 ) -> str:
     """Génère un reçu de réinscription propre, moderne et parfaitement aligné au format PDF
