@@ -1,2 +1,3 @@
+from .enrollment_controller import EnrollmentController
 from .reenrollment_controller import ReEnrollmentController
 
