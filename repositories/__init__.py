@@ -1,1 +1,1 @@
-from .enrollment_repo import EnrollmentRepo
+from .student_list_repo import StudentListRepo

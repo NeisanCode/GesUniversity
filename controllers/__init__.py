@@ -1,7 +1,1 @@
-from .enrollment_controller import EnrollmentController
-
-
-__all__ = [
-    "MonthlyPaymentController",
-    "EnrollmentController",
-]
+from .student_list_controller import StudentListController

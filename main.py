@@ -1,7 +1,8 @@
-from interfaces import RegistrationForm
+from interfaces import StudentListFormFrame
 import customtkinter as ctk
+    
 
 app = ctk.CTk()
-form = RegistrationForm(app)
+form = StudentListFormFrame(app)
 form.pack(fill="both", expand=True, padx=25, pady=20)
 app.mainloop()
