@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from database import get_session
 from services import ReEnrollmentService
 from services.errors.exceptions import EtudiantNotFoundError, EnrollmentValidationError
-from .utils import gen_registration_pdf
+from .utils import gen_reregistration_pdf
 
 if TYPE_CHECKING:
     from interfaces import ReEnrollmentFormFrame
@@ -95,7 +95,7 @@ class ReEnrollmentController:
                 payment_method=payment_method,
             )
 
-            pdf_path = gen_registration_pdf(receipt, output_dir="receipts")
+            pdf_path = gen_reregistration_pdf(receipt, output_dir="receipts")
             messagebox.showinfo(
                 "Succès",
                 f"Réinscription enregistrée !\nReçu N° : REC-{receipt.receipt_number:05d}\nFichier : {pdf_path}",
