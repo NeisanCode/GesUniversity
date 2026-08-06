@@ -1,1 +1,1 @@
-from .generate_receipt import generate_receipt_pdf
+from .generate_pdf_month_payment import generate_pdf_month_payment

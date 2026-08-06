@@ -7,7 +7,7 @@ from database import get_session
 from models import Month, PaymentMethod
 from services import MonthlyPaymentService
 from services.errors.exceptions import EtudiantNotFoundError, PaymentValidationError
-from .utils import generate_receipt_pdf
+from .utils import generate_pdf_month_payment
 
 if TYPE_CHECKING:
     from interfaces import MonthlyPaymentFormFrame
@@ -172,7 +172,7 @@ class MonthlyPaymentController:
             self.search_student()
 
             # 3. Génération du PDF grâce au DTO (indépendant des sessions SQLAlchemy)
-            pdf_path = generate_receipt_pdf(receipt_dto, output_dir="receipts")
+            pdf_path = generate_pdf_month_payment(receipt_dto, output_dir="receipts")
 
             messagebox.showinfo(
                 "Paiement Validé",
@@ -216,7 +216,7 @@ class MonthlyPaymentController:
                 )
                 return
 
-            pdf_path = generate_receipt_pdf(receipt_dto, output_dir="receipts")
+            pdf_path = generate_pdf_month_payment(receipt_dto, output_dir="receipts")
 
             if os.path.exists(pdf_path):
                 webbrowser.open(os.path.abspath(pdf_path))
