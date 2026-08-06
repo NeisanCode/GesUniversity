@@ -4,12 +4,11 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-
-from models import ReceiptDTO
+from models import PaymentReceiptDTO
 
 
 def generate_pdf_month_payment(
-    receipt: ReceiptDTO, output_dir: str = "receipts"
+    receipt: PaymentReceiptDTO, output_dir: str = "receipts"
 ) -> str:
     """Génère un reçu de paiement propre, moderne et parfaitement aligné au format PDF."""
     Path(output_dir).mkdir(parents=True, exist_ok=True)

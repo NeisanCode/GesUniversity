@@ -17,7 +17,7 @@ class EtudiantDTO:
 
 
 @dataclass
-class ReceiptDTO:
+class PaymentReceiptDTO:
     receipt_number: int
     receipt_date: date
     student_id_number: str

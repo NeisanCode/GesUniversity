@@ -5,8 +5,13 @@ from models import Student, Enrollment
 
 class MonthlyPaymentFormFrame(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
+        super().__init__(master, fg_color="transparent", **kwargs)
         self.controller = MonthlyPaymentController(self)
+
+        # Configuration des polices harmonisées avec EnrollmentFormFrame
+        self.font_title = ("Helvetica", 14, "bold")
+        self.font_label = ("Helvetica", 12, "bold")
+        self.font_entry = ("Helvetica", 12)
 
         # Configuration de la grille (2 colonnes principales)
         self.grid_columnconfigure(0, weight=1)
@@ -24,166 +29,234 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
         self.display_student_info(None, None)
         self.display_schedule([])
 
+    # ---------- HELPERS DE STYLISATION (IDENTIQUES À ENROLLMENT) ----------
+    def create_title(self, parent, text):
+        ctk.CTkLabel(
+            parent, text=text, font=self.font_title, text_color="#3b82f6", anchor="w"
+        ).pack(fill="x", pady=(0, 12))
+
+    def create_entry(self, parent, label_text, placeholder):
+        ctk.CTkLabel(
+            parent,
+            text=label_text,
+            font=self.font_label,
+            text_color="#d1d5db",
+            anchor="w",
+        ).pack(fill="x", pady=(0, 2))
+        entry = ctk.CTkEntry(
+            parent,
+            placeholder_text=placeholder,
+            placeholder_text_color="#6b7280",
+            fg_color="#111827",
+            border_color="#2b3544",
+            text_color="#e5e7eb",
+            height=36,
+            corner_radius=6,
+            font=self.font_entry,
+        )
+        entry.pack(fill="x", pady=(0, 10))
+        return entry
+
+    def create_option_menu(self, parent, label_text, values, command=None):
+        ctk.CTkLabel(
+            parent,
+            text=label_text,
+            font=self.font_label,
+            text_color="#d1d5db",
+            anchor="w",
+        ).pack(fill="x", pady=(0, 2))
+        
+        kwargs = {}
+        if command:
+            kwargs["command"] = command
+
+        menu = ctk.CTkOptionMenu(
+            parent,
+            values=values,
+            fg_color="#111827",
+            button_color="#2b3544",
+            button_hover_color="#374151",
+            text_color="#e5e7eb",
+            dropdown_fg_color="#1f2937",
+            height=36,
+            corner_radius=6,
+            **kwargs,
+        )
+        menu.pack(fill="x", pady=(0, 10))
+        return menu
+
     # ---------- CONSTRUCTION DE L'INTERFACE ----------
     def _create_left_column(self):
         """Colonne de gauche : recherche, infos étudiant, tableau des échéances."""
         self.left_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.left_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=15)
 
-        # Titre
-        ctk.CTkLabel(
-            self.left_frame,
-            text="RECHERCHE ÉTUDIANT",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#3B82F6",
-        ).pack(anchor="w", pady=(0, 10))
+        # Titre section
+        self.create_title(self.left_frame, "RECHERCHE ÉTUDIANT")
 
-        # Barre de recherche
+        # Barre de recherche avec style entry/button
         search_box = ctk.CTkFrame(self.left_frame, fg_color="transparent")
         search_box.pack(fill="x", pady=(0, 15))
 
         self.search_student_id = ctk.CTkEntry(
             search_box,
             placeholder_text="Entrer le Matricule (ex: ETU20260001)...",
-            height=40,
+            placeholder_text_color="#6b7280",
+            fg_color="#111827",
+            border_color="#2b3544",
+            text_color="#e5e7eb",
+            height=38,
+            corner_radius=6,
+            font=self.font_entry,
         )
         self.search_student_id.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         ctk.CTkButton(
-            search_box, text="Rechercher", height=40, command=self._on_search
+            search_box,
+            text="Rechercher",
+            fg_color="#3b82f6",
+            hover_color="#2563eb",
+            text_color="white",
+            height=38,
+            corner_radius=6,
+            font=("Helvetica", 12, "bold"),
+            command=self._on_search,
         ).pack(side="right")
 
-        # Carte d'information (Grille sur 2 colonnes)
-        self.info_card = ctk.CTkFrame(self.left_frame, corner_radius=10)
+        # Carte d'information stylisée
+        self.info_card = ctk.CTkFrame(
+            self.left_frame,
+            fg_color="#111827",
+            border_color="#2b3544",
+            border_width=1,
+            corner_radius=8,
+        )
         self.info_card.pack(fill="x", pady=(0, 15), ipadx=10, ipady=10)
         self.info_card.grid_columnconfigure(0, weight=1)
         self.info_card.grid_columnconfigure(1, weight=1)
 
-        # Rangée 0: Étudiant | Niveau
+        # Labels dans la carte d'information
         self.lbl_student_name = ctk.CTkLabel(
             self.info_card,
             text="Étudiant : --",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=("Helvetica", 13, "bold"),
+            text_color="#e5e7eb",
         )
         self.lbl_student_name.grid(row=0, column=0, sticky="w", padx=10, pady=4)
 
         self.lbl_level = ctk.CTkLabel(
             self.info_card,
             text="Niveau : --",
-            text_color="gray70",
+            font=("Helvetica", 12),
+            text_color="#9ca3af",
         )
         self.lbl_level.grid(row=0, column=1, sticky="w", padx=10, pady=4)
 
-        # Rangée 1: Programme | Filière
         self.lbl_program = ctk.CTkLabel(
             self.info_card,
             text="Programme : --",
-            text_color="gray70",
+            font=("Helvetica", 12),
+            text_color="#9ca3af",
         )
         self.lbl_program.grid(row=1, column=0, sticky="w", padx=10, pady=4)
 
         self.lbl_major = ctk.CTkLabel(
             self.info_card,
             text="Filière : --",
-            text_color="gray70",
+            font=("Helvetica", 12),
+            text_color="#9ca3af",
         )
         self.lbl_major.grid(row=1, column=1, sticky="w", padx=10, pady=4)
 
-        # Rangée 2: Classe | Mensualité
         self.lbl_class_group = ctk.CTkLabel(
             self.info_card,
             text="Classe : --",
-            text_color="gray70",
+            font=("Helvetica", 12),
+            text_color="#9ca3af",
         )
         self.lbl_class_group.grid(row=2, column=0, sticky="w", padx=10, pady=4)
 
         self.lbl_monthly_fee = ctk.CTkLabel(
             self.info_card,
             text="Mensualité : -- FCFA",
-            text_color="#10B981",
-            font=ctk.CTkFont(weight="bold"),
+            text_color="#10b981",
+            font=("Helvetica", 12, "bold"),
         )
         self.lbl_monthly_fee.grid(row=2, column=1, sticky="w", padx=10, pady=4)
 
-        # Rangée 3: Frais Totaux | Reste à Payer
         self.lbl_total_fee = ctk.CTkLabel(
             self.info_card,
             text="Frais Totaux : -- FCFA",
-            text_color="#FFFFFF",
-            font=ctk.CTkFont(weight="bold"),
+            text_color="#e5e7eb",
+            font=("Helvetica", 12, "bold"),
         )
         self.lbl_total_fee.grid(row=3, column=0, sticky="w", padx=10, pady=4)
 
         self.lbl_remaining_balance = ctk.CTkLabel(
             self.info_card,
             text="Reste à Payer : -- FCFA",
-            text_color="#EF4444",
-            font=ctk.CTkFont(weight="bold"),
+            text_color="#ef4444",
+            font=("Helvetica", 12, "bold"),
         )
         self.lbl_remaining_balance.grid(row=3, column=1, sticky="w", padx=10, pady=4)
 
-        # --- EN-TÊTE DU TABLEAU (4 COLONNES) ---
-        header = ctk.CTkFrame(self.left_frame, fg_color="#1E293B", corner_radius=6)
+        # En-tête du Tableau
+        header = ctk.CTkFrame(self.left_frame, fg_color="#1f2937", corner_radius=6)
         header.pack(fill="x", pady=(5, 2))
-        
+
         columns = [
             ("Mois", "w", 90),
             ("Montant", "center", 90),
             ("Statut", "center", 90),
             ("Action", "center", 90),
         ]
-        
+
         for text, anchor, width in columns:
             ctk.CTkLabel(
                 header,
                 text=text,
-                font=ctk.CTkFont(size=12, weight="bold"),
+                font=("Helvetica", 11, "bold"),
+                text_color="#d1d5db",
                 width=width,
                 anchor=anchor,
-            ).pack(side="left", padx=5, pady=8)
+            ).pack(side="left", padx=5, pady=6)
 
-        # Corps du Tableau (déroulant)
+        # Tableau déroulant
         self.scroll_month = ctk.CTkScrollableFrame(
-            self.left_frame, height=160, fg_color="#0F172A"
+            self.left_frame, height=160, fg_color="#111827", corner_radius=6
         )
         self.scroll_month.pack(fill="both", expand=True)
 
     def _create_right_column(self):
         """Colonne de droite : formulaire de paiement."""
         self.right_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.right_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=15)
 
-        ctk.CTkLabel(
+        self.create_title(self.right_frame, "NOUVEAU PAIEMENT")
+
+        # Sélecteur de mois
+        self.combo_month = self.create_option_menu(
             self.right_frame,
-            text="NOUVEAU PAIEMENT",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#3B82F6",
-        ).pack(anchor="w", pady=(0, 15))
-
-        # Choix du mois
-        ctk.CTkLabel(self.right_frame, text="Mois à régler :").pack(
-            anchor="w", pady=(0, 5)
+            "Mois à régler :",
+            ["Sélectionner..."],
+            command=self._on_month_changed,
         )
-        self.combo_month = ctk.CTkOptionMenu(
-            self.right_frame, height=38, command=self._on_month_changed
-        )
-        self.combo_month.pack(fill="x", pady=(0, 15))
 
         # Mode de Paiement
-        ctk.CTkLabel(self.right_frame, text="Mode de Paiement :").pack(
-            anchor="w", pady=(0, 5)
+        self.combo_method = self.create_option_menu(
+            self.right_frame, "Mode de Paiement :", ["Sélectionner..."]
         )
-        self.combo_method = ctk.CTkOptionMenu(self.right_frame, height=38)
-        self.combo_method.pack(fill="x", pady=(0, 15))
 
-        # Bouton de validation (placé en bas)
+        # Bouton de validation (Harmonisé avec EnrollmentFormFrame)
         self.btn_submit = ctk.CTkButton(
             self.right_frame,
             text="ENREGISTRER LE PAIEMENT & IMPRIMER REÇU",
+            fg_color="#3b82f6",
+            hover_color="#2563eb",
+            text_color="white",
             height=45,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#2563EB",
-            hover_color="#1D4ED8",
+            corner_radius=8,
+            font=("Helvetica", 12, "bold"),
             command=self._on_submit_payment,
         )
         self.btn_submit.pack(fill="x", side="bottom")
@@ -197,7 +270,7 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
         total_fee: float = 0.0,
         remaining_balance: float = 0.0,
     ):
-        """Mets à jour les labels avec les informations de l'étudiant et du cursus."""
+        """Met à jour les labels d'information."""
         if student and enrollment:
             class_group = enrollment.class_group
             program = class_group.program if class_group else None
@@ -217,12 +290,15 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
             self.lbl_monthly_fee.configure(text=f"Mensualité : {monthly_fee:,.0f} FCFA")
             self.lbl_total_fee.configure(text=f"Frais Totaux : {total_fee:,.0f} FCFA")
 
-            rem_text_color = "#10B981" if remaining_balance <= 0 else "#EF4444"
-            rem_prefix = "SOLDÉ (0 FCFA)" if remaining_balance <= 0 else f"{remaining_balance:,.0f} FCFA"
+            rem_text_color = "#10b981" if remaining_balance <= 0 else "#ef4444"
+            rem_prefix = (
+                "SOLDÉ (0 FCFA)"
+                if remaining_balance <= 0
+                else f"{remaining_balance:,.0f} FCFA"
+            )
 
             self.lbl_remaining_balance.configure(
-                text=f"Reste à Payer : {rem_prefix}",
-                text_color=rem_text_color,
+                text=f"Reste à Payer : {rem_prefix}", text_color=rem_text_color
             )
         else:
             self.lbl_student_name.configure(text="Étudiant : --")
@@ -232,17 +308,18 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
             self.lbl_class_group.configure(text="Classe : --")
             self.lbl_monthly_fee.configure(text="Mensualité : -- FCFA")
             self.lbl_total_fee.configure(text="Frais Totaux : -- FCFA")
-            self.lbl_remaining_balance.configure(text="Reste à Payer : -- FCFA", text_color="#EF4444")
+            self.lbl_remaining_balance.configure(
+                text="Reste à Payer : -- FCFA", text_color="#ef4444"
+            )
 
     def display_schedule(self, installments):
-        """Reconstruit le tableau des mois avec 4 colonnes (Mois | Montant | Statut | Action)."""
-        # Nettoyage du conteneur
+        """Reconstruit le tableau des échéances."""
         for widget in self.scroll_month.winfo_children():
             widget.destroy()
 
         if not installments:
             lbl = ctk.CTkLabel(
-                self.scroll_month, text="Aucune échéance trouvée", text_color="gray50"
+                self.scroll_month, text="Aucune échéance trouvée", text_color="#6b7280"
             )
             lbl.pack(pady=20)
             return
@@ -252,30 +329,35 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
             amount = installment["amount"]
             is_paid = installment["paid"]
 
-            row_bg = "#1E293B" if index % 2 == 0 else "#0F172A"
+            row_bg = "#1f2937" if index % 2 == 0 else "#111827"
             row = ctk.CTkFrame(self.scroll_month, fg_color=row_bg, corner_radius=4)
             row.pack(fill="x", pady=2, ipady=2)
 
-            # 1. Colonne MOIS
+            # 1. MOIS
             ctk.CTkLabel(
-                row, text=month, font=ctk.CTkFont(size=12), width=90, anchor="w"
+                row,
+                text=month,
+                font=("Helvetica", 11),
+                text_color="#e5e7eb",
+                width=90,
+                anchor="w",
             ).pack(side="left", padx=5)
 
-            # 2. Colonne MONTANT
+            # 2. MONTANT
             ctk.CTkLabel(
                 row,
                 text=f"{amount:,.0f} FCFA",
-                font=ctk.CTkFont(size=12),
-                text_color="gray80",
+                font=("Helvetica", 11),
+                text_color="#9ca3af",
                 width=90,
                 anchor="center",
             ).pack(side="left", padx=5)
 
-            # 3. Colonne STATUT (Toujours présente avec badge PAYÉ ou NON PAYÉ)
+            # 3. STATUT
             status_text, status_color, status_bg = (
-                ("PAYÉ", "#10B981", "#064E3B")
+                ("PAYÉ", "#10b981", "#064e3b")
                 if is_paid
-                else ("NON PAYÉ", "#EF4444", "#7F1D1D")
+                else ("NON PAYÉ", "#ef4444", "#7f1d1d")
             )
             badge_frame = ctk.CTkFrame(
                 row, fg_color=status_bg, corner_radius=6, width=85, height=24
@@ -286,10 +368,10 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
                 badge_frame,
                 text=status_text,
                 text_color=status_color,
-                font=ctk.CTkFont(size=10, weight="bold"),
+                font=("Helvetica", 10, "bold"),
             ).place(relx=0.5, rely=0.5, anchor="center")
 
-            # 4. Colonne ACTION (Bouton reçu si payé, tiret sinon)
+            # 4. ACTION
             action_frame = ctk.CTkFrame(row, fg_color="transparent", width=90, height=26)
             action_frame.pack(side="left", padx=5)
             action_frame.pack_propagate(False)
@@ -300,31 +382,29 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
                     text="🖨️ Reçu",
                     width=85,
                     height=24,
-                    fg_color="#2563EB",
-                    hover_color="#1D4ED8",
-                    font=ctk.CTkFont(size=10, weight="bold"),
+                    fg_color="#3b82f6",
+                    hover_color="#2563eb",
+                    text_color="white",
+                    font=("Helvetica", 10, "bold"),
                     command=lambda m=month: self.controller.reprint_receipt(m),
                 ).place(relx=0.5, rely=0.5, anchor="center")
             else:
                 ctk.CTkLabel(
                     action_frame,
                     text="--",
-                    text_color="gray50",
-                    font=ctk.CTkFont(size=12),
+                    text_color="#6b7280",
+                    font=("Helvetica", 11),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
     def get_selected_month(self) -> str | None:
-        """Retourne la valeur actuellement sélectionnée dans la liste des mois."""
         val = self.combo_month.get()
-        return val if val and val not in ("Choisir un mois...", "Tout est réglé") else None
+        return val if val and val not in ("Choisir un mois...", "Tout est réglé", "Sélectionner...") else None
 
     def get_payment_method(self) -> str | None:
-        """Retourne le mode de paiement sélectionné."""
         val = self.combo_method.get()
-        return val if val and val != "Choisir un mode..." else None
+        return val if val and val != "Sélectionner..." else None
 
     def get_student_id(self) -> str:
-        """Retourne le matricule saisi dans le champ de recherche."""
         return self.search_student_id.get().strip()
 
     # ---------- GESTIONNAIRES D'ÉVÉNEMENTS ----------
@@ -336,12 +416,3 @@ class MonthlyPaymentFormFrame(ctk.CTkFrame):
 
     def _on_submit_payment(self):
         self.controller.process_payment()
-
-
-if __name__ == "__main__":
-    app = ctk.CTk()
-    app.title("Gestion des Paiements Mensuels")
-    app.geometry("950x600")
-    frame = MonthlyPaymentFormFrame(app)
-    frame.pack(fill="both", expand=True)
-    app.mainloop()
