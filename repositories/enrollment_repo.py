@@ -135,3 +135,4 @@ class EnrollmentRepo(BaseRepo[Enrollment]):
             )
             sequence = last_sequence + 1
         return f"{year_prefix}{sequence:04d}"
+

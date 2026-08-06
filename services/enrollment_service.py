@@ -22,8 +22,6 @@ from services.errors.exceptions import (
 )
 
 
-
-
 class EnrollmentService:
 
     def __init__(self, session_factory: Callable[[], Session]):
@@ -94,9 +92,7 @@ class EnrollmentService:
                 student = Student(
                     last_name=dto.nom.strip().upper(),
                     first_name=dto.prenom.strip().title(),
-                    student_id_number=repo.get_next_student_id_number(
-                        current_year
-                    ),
+                    student_id_number=repo.get_next_student_id_number(current_year),
                     date_of_birth=dto.date_naissance,
                     email=dto.email.strip().lower(),
                     address=dto.adresse.strip(),
@@ -175,39 +171,25 @@ class EnrollmentService:
             amount_paid=payment.amount_paid,
         )
 
-    def _validate_dto(
-        self, dto: StudentDTO, current_year: AcademicYear
-    ) -> None:
+    def _validate_dto(self, dto: StudentDTO, current_year: AcademicYear) -> None:
         if not dto.nom or not dto.nom.strip():
-            raise EnrollmentValidationError(
-                "Le nom de l’étudiant est obligatoire."
-            )
+            raise EnrollmentValidationError("Le nom de l’étudiant est obligatoire.")
         if not dto.prenom or not dto.prenom.strip():
-            raise EnrollmentValidationError(
-                "Le prénom de l’étudiant est obligatoire."
-            )
+            raise EnrollmentValidationError("Le prénom de l’étudiant est obligatoire.")
         if not dto.email or not dto.email.strip():
             raise EnrollmentValidationError("L’adresse email est obligatoire.")
         if not dto.adresse or not dto.adresse.strip():
-            raise EnrollmentValidationError(
-                "L’adresse physique est obligatoire."
-            )
+            raise EnrollmentValidationError("L’adresse physique est obligatoire.")
         if not dto.filiere or not dto.filiere.strip():
-            raise EnrollmentValidationError(
-                "La filière d’études est obligatoire."
-            )
+            raise EnrollmentValidationError("La filière d’études est obligatoire.")
         if not dto.niveau_etude or not dto.niveau_etude.strip():
-            raise EnrollmentValidationError(
-                "Le niveau d’étude est obligatoire."
-            )
+            raise EnrollmentValidationError("Le niveau d’étude est obligatoire.")
         if dto.annee_academique != current_year.label:
             raise EnrollmentValidationError(
                 "L’inscription doit être réalisée sur l’année académique active en cours."
             )
 
-    def _ensure_email_is_available(
-        self, email: str, repo: EnrollmentRepo
-    ) -> None:
+    def _ensure_email_is_available(self, email: str, repo: EnrollmentRepo) -> None:
         normalized_email = email.strip().lower()
         if not normalized_email:
             raise EnrollmentValidationError("L’adresse email est obligatoire.")
@@ -220,14 +202,10 @@ class EnrollmentService:
         for method in PaymentMethod:
             if method.value == method_name:
                 return method
-        raise EnrollmentValidationError(
-            "Le mode de paiement sélectionné est invalide."
-        )
+        raise EnrollmentValidationError("Le mode de paiement sélectionné est invalide.")
 
     def _get_next_receipt_number(self, session: Session) -> int:
-        last_receipt = (
-            session.query(Receipt).order_by(Receipt.id.desc()).first()
-        )
+        last_receipt = session.query(Receipt).order_by(Receipt.id.desc()).first()
         return (last_receipt.receipt_number if last_receipt else 0) + 1
 
     def _get_registration_fee_for_year(
