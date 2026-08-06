@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from tkinter import messagebox
 from database import get_session
 from services import PaymentStatsService
-from .utils import generate_payment_report_pdf
+from .utils import payment_stat_pdf
 
 if TYPE_CHECKING:
     from interfaces import PaymentStatsFormFrame
@@ -100,7 +100,7 @@ class PaymentStatsController:
             selected_program = self.view.get_selected_program_label()
             academic_year_label = self.view.lbl_active_year.cget("text").replace("Année Académique : ", "")
 
-            pdf_path = generate_payment_report_pdf(
+            pdf_path = payment_stat_pdf(
                 month_name=selected_month,
                 class_name=selected_class,
                 program_name=selected_program,

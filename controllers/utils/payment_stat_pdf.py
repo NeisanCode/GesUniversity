@@ -36,7 +36,7 @@ class NumberedCanvas(canvas.Canvas):
         self.drawRightString(A4[0] - 10 * mm, 10 * mm, page_text)
 
 
-def generate_payment_report_pdf(
+def payment_stat_pdf(
     month_name: str,
     class_name: str,
     program_name: str,
