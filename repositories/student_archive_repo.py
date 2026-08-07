@@ -130,8 +130,6 @@ class StudentArchiveRepo(BaseRepo[Enrollment]):
             .all()
         )
 
-        total_due = sum(f.amount for f in fees)
-
         # 2. Récupération des paiements effectués par l'étudiant
         payments = (
             self.session.query(Payment)
@@ -140,39 +138,84 @@ class StudentArchiveRepo(BaseRepo[Enrollment]):
             .all()
         )
 
-        total_paid = sum(p.amount_paid for p in payments)
-        balance_remaining = max(0.0, total_due - total_paid)
-        is_fully_paid = total_paid >= total_due and total_due > 0
+        # Ordre des mois pour l'année scolaire (Septembre à Août)
+        school_month_order = {
+            "SEPTEMBER": 1, "SEPTEMBRE": 1,
+            "OCTOBER": 2, "OCTOBRE": 2,
+            "NOVEMBER": 3, "NOVEMBRE": 3,
+            "DECEMBER": 4, "DÉCEMBRE": 4, "DECEMBRE": 4,
+            "JANUARY": 5, "JANVIER": 5,
+            "FEBRUARY": 6, "FÉVRIER": 6, "FEVRIER": 6,
+            "MARCH": 7, "MARS": 7,
+            "APRIL": 8, "AVRIL": 8,
+            "MAY": 9, "MAI": 9,
+            "JUNE": 10, "JUIN": 10,
+            "JULY": 11, "JUILLET": 11,
+            "AUGUST": 12, "AOÛT": 12, "AOUT": 12,
+        }
 
-        # 3. Détail par mois / échéances
-        monthly_details = []
+        # 3. Extraction et tri de toutes les échéances
+        all_installments = []
         for fee in fees:
             for inst in fee.installments:
-                inst_payments = [p for p in payments if p.installment_id == inst.id]
-                inst_paid = sum(p.amount_paid for p in inst_payments)
-                inst_remaining = max(0.0, inst.amount - inst_paid)
+                all_installments.append((fee, inst))
 
-                if inst_remaining == 0:
-                    status = "Réglé"
-                elif inst_paid > 0:
-                    status = "Partiel"
-                else:
-                    status = "Non réglé"
+        def get_month_order(item):
+            _, inst = item
+            month_val = (
+                inst.month.value
+                if hasattr(inst.month, "value")
+                else str(inst.month)
+            )
+            return school_month_order.get(month_val.upper(), 99)
 
-                monthly_details.append(
-                    {
-                        "month": (
-                            inst.month.value
-                            if hasattr(inst.month, "value")
-                            else str(inst.month)
-                        ),
-                        "fee_type": fee.fee_type.name,
-                        "amount_due": inst.amount,
-                        "amount_paid": inst_paid,
-                        "remaining": inst_remaining,
-                        "status": status,
-                    }
-                )
+        all_installments.sort(key=get_month_order)
+
+        # 4. Détail par mois / échéances et calcul du total dû
+        # 4. Détail par mois / échéances et calcul rigoureux
+        monthly_details = []
+        total_due = 0.0
+        total_paid = 0.0  # On calcule le total payé basé sur les échéances réelles
+
+        for fee, inst in all_installments:
+            total_due += inst.amount
+
+            inst_payments = [p for p in payments if p.installment_id == inst.id]
+            inst_paid = sum(p.amount_paid for p in inst_payments)
+            total_paid += inst_paid  # Sum de la scolarité uniquement
+
+            inst_remaining = max(0.0, inst.amount - inst_paid)
+
+            if inst_remaining == 0:
+                status = "Réglé"
+            elif inst_paid > 0:
+                status = "Partiel"
+            else:
+                status = "Non réglé"
+
+            month_name = (
+                inst.month.value
+                if hasattr(inst.month, "value")
+                else str(inst.month)
+            )
+
+            monthly_details.append(
+                {
+                    "month": month_name,
+                    "fee_type": fee.fee_type.name,
+                    "amount_due": inst.amount,
+                    "amount_paid": inst_paid,
+                    "remaining": inst_remaining,
+                    "status": status,
+                }
+            )
+
+        if total_due == 0.0 and fees:
+            total_due = sum(f.amount for f in fees)
+            total_paid = sum(p.amount_paid for p in payments)
+
+        balance_remaining = max(0.0, total_due - total_paid)
+        is_fully_paid = total_paid >= total_due and total_due > 0
 
         return {
             "student_name": f"{enrollment.student.last_name.upper()} {enrollment.student.first_name}",
