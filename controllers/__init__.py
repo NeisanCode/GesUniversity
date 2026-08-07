@@ -1,1 +1,1 @@
-from .student_list_controller import StudentListController
+from .student_archive_controller import StudentArchiveController

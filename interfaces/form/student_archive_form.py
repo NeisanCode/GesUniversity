@@ -1,20 +1,17 @@
-# interfaces/form/student_list_form.py
 import customtkinter as ctk
-from controllers import StudentListController
+from controllers import StudentArchiveController
 
 
-class StudentListFormFrame(ctk.CTkFrame):
+class StudentArchiveForm(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, fg_color="transparent")
 
-        self.chk_new_var = ctk.BooleanVar(value=True)
-        self.chk_re_var = ctk.BooleanVar(value=True)
         self.selected_program_radio_var = ctk.IntVar(value=-1)
-
-        self.controller = StudentListController(self)
+        self.controller = StudentArchiveController(self)
         self.program_badges = {}
+        self.years_map = {}
 
-        # Configuration stricte et uniforme de la grille globale du Form
+        # Configuration de la grille globale
         self.grid_columnconfigure(0, weight=0, minsize=270)
         self.grid_columnconfigure(1, weight=1, uniform="main_cols")
         self.grid_rowconfigure(0, weight=1)
@@ -23,14 +20,15 @@ class StudentListFormFrame(ctk.CTkFrame):
         self.font_header = ("Helvetica", 11, "bold")
         self.font_cell = ("Helvetica", 11)
 
+        # Colonnes demandées (Nom, Prénom, Email, Matricule, Date Anniversaire, Adresse)
         self.columns = [
-            ("Matricule", 110),
-            ("Nom & Prénom", 180),
-            ("Programme / Filière", 200),
-            ("Classe", 100),
-            ("Type d'inscription", 130),
-            ("Statut", 90),
-            ("Date d'inscription", 120),
+            ("Matricule", 100),
+            ("Nom", 120),
+            ("Prénom", 120),
+            ("Email", 160),
+            ("Date Naiss.", 110),
+            ("Adresse", 140),
+            ("Année Acad.", 100),
         ]
 
         self._create_program_sidebar()
@@ -54,7 +52,7 @@ class StudentListFormFrame(ctk.CTkFrame):
 
         self.entry_program_search = ctk.CTkEntry(
             sidebar,
-            placeholder_text="Rechercher ex: Informatique...",
+            placeholder_text="Rechercher programme...",
             fg_color="#111827",
             border_color="#374151",
             text_color="#e5e7eb",
@@ -87,19 +85,11 @@ class StudentListFormFrame(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header_frame,
-            text="LISTE DES ÉLÈVES INSCRITS & RÉINSCRITS",
+            text="ARCHIVES - ÉLÈVES DES ANNÉES ANTÉRIEURES",
             font=self.font_title,
-            text_color="#3b82f6",
+            text_color="#f59e0b",
             anchor="w",
         ).pack(side="left")
-
-        self.lbl_active_year = ctk.CTkLabel(
-            header_frame,
-            text="Année Académique : --",
-            font=("Helvetica", 12, "bold"),
-            text_color="#10b981",
-        )
-        self.lbl_active_year.pack(side="right")
 
         # Filtres
         filter_frame = ctk.CTkFrame(main_frame, fg_color="#1f2937", corner_radius=8)
@@ -111,7 +101,7 @@ class StudentListFormFrame(ctk.CTkFrame):
             fg_color="#111827",
             border_color="#374151",
             text_color="#e5e7eb",
-            width=220,
+            width=200,
             height=32,
         )
         self.entry_student_search.pack(side="left", padx=(15, 5), pady=10)
@@ -122,42 +112,41 @@ class StudentListFormFrame(ctk.CTkFrame):
             command=self.controller.on_search_button_clicked,
             fg_color="#2563eb",
             hover_color="#1d4ed8",
-            width=100,
+            width=90,
             height=32,
             font=("Helvetica", 11, "bold"),
         )
         btn_search.pack(side="left", padx=(0, 15), pady=10)
 
-        self.chk_new = ctk.CTkCheckBox(
+        # Sélection Année
+        ctk.CTkLabel(
             filter_frame,
-            text="Inscrits",
-            variable=self.chk_new_var,
-            command=self.controller.refresh_student_list,
+            text="Année :",
             font=("Helvetica", 11, "bold"),
-            text_color="#38bdf8",
-            fg_color="#0284c7",
-            hover_color="#0369a1",
-        )
-        self.chk_new.pack(side="left", padx=5, pady=10)
+            text_color="#d1d5db",
+        ).pack(side="left", padx=(5, 5), pady=10)
 
-        self.chk_re = ctk.CTkCheckBox(
+        self.combo_years = ctk.CTkOptionMenu(
             filter_frame,
-            text="Réinscrits",
-            variable=self.chk_re_var,
-            command=self.controller.refresh_student_list,
-            font=("Helvetica", 11, "bold"),
-            text_color="#c084fc",
-            fg_color="#9333ea",
-            hover_color="#7e22ce",
+            values=["Toutes"],
+            command=self._on_year_combo_changed,
+            fg_color="#111827",
+            button_color="#2b3544",
+            button_hover_color="#374151",
+            text_color="#e5e7eb",
+            dropdown_fg_color="#1f2937",
+            width=130,
+            height=32,
         )
-        self.chk_re.pack(side="left", padx=5, pady=10)
+        self.combo_years.pack(side="left", padx=(0, 15), pady=10)
 
+        # Limite
         ctk.CTkLabel(
             filter_frame,
             text="Afficher :",
             font=("Helvetica", 11, "bold"),
             text_color="#d1d5db",
-        ).pack(side="left", padx=(15, 5), pady=10)
+        ).pack(side="left", padx=(5, 5), pady=10)
 
         self.combo_limit = ctk.CTkOptionMenu(
             filter_frame,
@@ -174,24 +163,37 @@ class StudentListFormFrame(ctk.CTkFrame):
         self.combo_limit.set("50")
         self.combo_limit.pack(side="left", padx=(0, 15), pady=10)
 
-        # Tableau Déroulant - FIXATION DÉFINITIVE DES COLONNES ICI
+        # Tableau
         self.scrollable_table = ctk.CTkScrollableFrame(
             main_frame, fg_color="#111827", corner_radius=8
         )
         self.scrollable_table.grid(row=2, column=0, sticky="nsew")
 
-        # Configuration unique des poids de colonnes du tableau
         for idx, (_, width) in enumerate(self.columns):
             self.scrollable_table.grid_columnconfigure(
                 idx, weight=1, minsize=width, uniform="table_columns"
             )
+
+    def render_years_combo(self, years: list):
+        self.years_map = {"Toutes les années": None}
+        options = ["Toutes les années"]
+
+        for y in years:
+            options.append(y["label"])
+            self.years_map[y["label"]] = y["id"]
+
+        self.combo_years.configure(values=options)
+        self.combo_years.set("Toutes les années")
+
+    def _on_year_combo_changed(self, selected_label: str):
+        year_id = self.years_map.get(selected_label)
+        self.controller.on_year_selected(year_id)
 
     def render_program_sidebar_list(self, programs: list):
         for widget in self.scroll_programs.winfo_children():
             widget.destroy()
 
         self.program_badges.clear()
-
         current_selected = self.controller.selected_program_id
         active_key = current_selected if current_selected is not None else -1
         self.selected_program_radio_var.set(active_key)
@@ -252,35 +254,21 @@ class StudentListFormFrame(ctk.CTkFrame):
         )
         radio.pack(side="left", padx=10, pady=6, fill="x", expand=True)
 
-        self.program_badges[val_key] = {
-            "frame": badge_frame,
-            "radio": radio,
-        }
-
+        self.program_badges[val_key] = {"frame": badge_frame, "radio": radio}
         badge_frame.bind("<Button-1>", lambda e: radio.select())
 
     def _highlight_active_badge(self, active_key: int):
         for key, components in self.program_badges.items():
             radio = components["radio"]
             if key == active_key:
-                radio.configure(
-                    font=("Helvetica", 11, "bold"),
-                    text_color="#ffffff",
-                )
+                radio.configure(font=("Helvetica", 11, "bold"), text_color="#ffffff")
             else:
-                radio.configure(
-                    font=("Helvetica", 11, "normal"),
-                    text_color="#d1d5db",
-                )
-
-    def update_active_year_display(self, year_label: str):
-        self.lbl_active_year.configure(text=f"Année Académique : {year_label}")
+                radio.configure(font=("Helvetica", 11, "normal"), text_color="#d1d5db")
 
     def render_student_table(self, students: list):
         for widget in self.scrollable_table.winfo_children():
             widget.destroy()
 
-        # En-têtes du tableau
         for col_idx, (col_name, _) in enumerate(self.columns):
             lbl = ctk.CTkLabel(
                 self.scrollable_table,
@@ -296,7 +284,7 @@ class StudentListFormFrame(ctk.CTkFrame):
         if not students:
             lbl_empty = ctk.CTkLabel(
                 self.scrollable_table,
-                text="Aucun élève trouvé pour cette sélection.",
+                text="Aucun élève trouvé pour cette sélection d'années antérieures.",
                 font=self.font_cell,
                 text_color="#6b7280",
             )
@@ -305,31 +293,27 @@ class StudentListFormFrame(ctk.CTkFrame):
 
         base_bg = "#111827"
         hover_bg = "#1e293b"
-        flash_bg = "#38bdf8"
+        flash_bg = "#f59e0b"
 
         for row_idx, student in enumerate(students, start=1):
             values = [
                 student["student_id_number"],
-                student["full_name"],
-                student["program"],
-                student["class_group"],
-                student["enrollment_type"],
-                student["status"],
-                student["enrollment_date"],
+                student["last_name"],
+                student["first_name"],
+                student["email"],
+                student["date_of_birth"],
+                student["address"],
+                student["academic_year"],
             ]
 
             row_labels = []
 
             for col_idx, val in enumerate(values):
-                text_color = "#e5e7eb"
-                if col_idx == 4:
-                    text_color = "#38bdf8" if val == "Nouveau" else "#c084fc"
-
                 lbl = ctk.CTkLabel(
                     self.scrollable_table,
                     text=val,
                     font=self.font_cell,
-                    text_color=text_color,
+                    text_color="#e5e7eb",
                     anchor="w",
                     fg_color=base_bg,
                     height=30,
@@ -338,7 +322,6 @@ class StudentListFormFrame(ctk.CTkFrame):
                 lbl.grid(row=row_idx, column=col_idx, sticky="ew", padx=1, pady=1)
                 row_labels.append(lbl)
 
-            # Événements Hover et Clic sur toute la ligne
             for lbl in row_labels:
                 lbl.bind("<Enter>", lambda e, labels=row_labels: self._on_row_hover(labels, hover_bg))
                 lbl.bind("<Leave>", lambda e, labels=row_labels, bg=base_bg: self._on_row_hover(labels, bg))
