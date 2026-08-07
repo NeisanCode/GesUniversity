@@ -1,5 +1,6 @@
 # Unecessary folder
 /receipts
+/temp
 
 # Virtual env
 /.venv
