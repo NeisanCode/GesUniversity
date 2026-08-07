@@ -215,14 +215,16 @@ class StudentArchiveForm(ctk.CTkFrame):
             return
 
         for p in programs:
-            is_selected = (current_selected == p["id"])
+            is_selected = current_selected == p["id"]
             self._create_program_badge(
                 program_id=p["id"],
                 label=p["label"],
                 is_selected=is_selected,
             )
 
-    def _create_program_badge(self, program_id: int | None, label: str, is_selected: bool):
+    def _create_program_badge(
+        self, program_id: int | None, label: str, is_selected: bool
+    ):
         val_key = program_id if program_id is not None else -1
 
         badge_frame = ctk.CTkFrame(
@@ -323,8 +325,16 @@ class StudentArchiveForm(ctk.CTkFrame):
                 row_labels.append(lbl)
 
             for lbl in row_labels:
-                lbl.bind("<Enter>", lambda e, labels=row_labels: self._on_row_hover(labels, hover_bg))
-                lbl.bind("<Leave>", lambda e, labels=row_labels, bg=base_bg: self._on_row_hover(labels, bg))
+                lbl.bind(
+                    "<Enter>",
+                    lambda e, labels=row_labels: self._on_row_hover(labels, hover_bg),
+                )
+                lbl.bind(
+                    "<Leave>",
+                    lambda e, labels=row_labels, bg=base_bg: self._on_row_hover(
+                        labels, bg
+                    ),
+                )
                 lbl.bind(
                     "<Button-1>",
                     lambda e, s=student, labels=row_labels, bg=base_bg, f_bg=flash_bg: self._on_row_click(
@@ -336,7 +346,9 @@ class StudentArchiveForm(ctk.CTkFrame):
         for lbl in row_labels:
             lbl.configure(fg_color=color)
 
-    def _on_row_click(self, student: dict, row_labels: list, base_bg: str, flash_bg: str):
+    def _on_row_click(
+        self, student: dict, row_labels: list, base_bg: str, flash_bg: str
+    ):
         def reset_and_open():
             for lbl in row_labels:
                 lbl.configure(fg_color=base_bg)
