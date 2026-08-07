@@ -149,7 +149,7 @@ class MainView(ctk.CTk):
         card_students = self._create_card(
             master=cards_grid,
             icon="📋",
-            title="Liste des Élèves",
+            title="Liste des Étudiants",
             description="Consultation, recherche et filtrage\ndes étudiants inscrits par classe.",
             command=lambda: self.show_page("student_list", "Liste des Élèves"),
         )
