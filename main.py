@@ -1,6 +1,6 @@
 import customtkinter as ctk
 
-from interfaces.form.student_archive_form import StudentArchiveForm
+from interfaces import StudentArchiveForm
 
 
 app = ctk.CTk()

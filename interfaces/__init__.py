@@ -1,2 +1,2 @@
-from .form.student_financial_level import StudentFinancialModal
-from .form.student_archive_form import StudentArchiveForm
+from .form.student_archives.student_financial_level import StudentFinancialModal
+from .form.student_archives.student_archive_form import StudentArchiveForm
