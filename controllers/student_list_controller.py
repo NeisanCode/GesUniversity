@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from tkinter import messagebox
 from database import get_session
 from services import StudentListService
-from interfaces.form.student_edit_level import StudentEditModalLevel
+from interfaces.form.student_list.student_edit_level import StudentEditModalLevel
 
 if TYPE_CHECKING:
     from interfaces import StudentListFormFrame
