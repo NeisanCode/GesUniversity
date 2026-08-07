@@ -87,7 +87,7 @@ class StudentListFormFrame(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header_frame,
-            text="LISTE DES ÉLÈVES INSCRITS & RÉINSCRITS",
+            text="LISTE DES ÉTUDIANTS INSCRITS & RÉINSCRITS",
             font=self.font_title,
             text_color="#3b82f6",
             anchor="w",

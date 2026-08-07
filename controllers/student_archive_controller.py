@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from database import get_session
 from services import StudentArchiveService
-from interfaces import StudentFinancialModal
+from interfaces.form.student_archives.student_financial_level import StudentFinancialModal
 
 
 if TYPE_CHECKING:

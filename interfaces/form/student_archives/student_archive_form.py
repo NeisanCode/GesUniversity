@@ -85,7 +85,7 @@ class StudentArchiveForm(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header_frame,
-            text="ARCHIVES - ÉLÈVES DES ANNÉES ANTÉRIEURES",
+            text="ARCHIVES - ÉTUDIANTS DES ANNÉES ANTÉRIEURES",
             font=self.font_title,
             text_color="#f59e0b",
             anchor="w",

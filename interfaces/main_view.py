@@ -1,12 +1,15 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from PIL import Image
+from config import LOGO_PATH
 
-# Importation des 5 vues / formulaires
+# Importation des vues / formulaires
 from .form.enrollment.registration_form import RegistrationForm
 from .form.monthly_payement.month_payment_form import MonthlyPaymentFormFrame
-from .form.student_list.student_list_form import StudentListFormFrame
+from .form.students_list.student_list_form import StudentListFormFrame
 from .form.payment_stat.payment_stat_form import PaymentStatsFormFrame
 from .form.manage_academique_year.academic_year_form import AcademicYearFormFrame
+from .form.student_archives.student_archive_form import StudentArchiveForm
+from interfaces.form.admin import AdminAuthFrame, AdminDashboardFrame
 
 
 class MainView(ctk.CTk):
@@ -19,10 +22,10 @@ class MainView(ctk.CTk):
         self.minsize(1000, 700)
 
         # Palette de couleurs globale
-        self.COLOR_BG = "#0F172A"  # Slate 900
-        self.COLOR_CARD_BG = "#1E293B"  # Slate 800
-        self.COLOR_CARD_HOVER = "#334155"  # Slate 700
-        self.COLOR_PRIMARY = "#3B82F6"  # Blue 500
+        self.COLOR_BG = "#0F172A"
+        self.COLOR_CARD_BG = "#1E293B"
+        self.COLOR_CARD_HOVER = "#334155"
+        self.COLOR_PRIMARY = "#3B82F6"
         self.COLOR_TEXT = "#F8FAFC"
         self.COLOR_SUBTEXT = "#94A3B8"
 
@@ -39,28 +42,30 @@ class MainView(ctk.CTk):
 
         self.views = {}
 
-        # Construction des composants de navigation et écrans principaux
+        # Navigation et Dashboards
         self._build_top_bar()
         self._build_main_dashboard()
-        self._build_admin_auth_page()
-        self._build_admin_dashboard()
 
-        # Conteneur pour afficher les 5 vues formulaires
+        # Écrans Admin (isolés)
+        self.admin_auth_frame = AdminAuthFrame(self.container, self)
+        self.admin_dashboard_frame = AdminDashboardFrame(self.container, self)
+
+        # Conteneur pour afficher les vues formulaires
         self.page_container = ctk.CTkFrame(self.container, fg_color="transparent")
 
-        # Initialisation des vues
+        # Initialisation des vues applicatives
         self.views["registration"] = RegistrationForm(self.page_container)
         self.views["payment"] = MonthlyPaymentFormFrame(self.page_container)
         self.views["student_list"] = StudentListFormFrame(self.page_container)
         self.views["payment_stats"] = PaymentStatsFormFrame(self.page_container)
         self.views["academic_year"] = AcademicYearFormFrame(self.page_container)
+        self.views["student_archive"] = StudentArchiveForm(self.page_container)
 
         # Démarrage sur le Dashboard Principal
         self.show_dashboard()
 
     # ---------- BARRE DE NAVIGATION SUPÉRIEURE ----------
     def _build_top_bar(self):
-        """Barre d'en-tête affichée lors de la consultation des formulaires."""
         self.top_bar = ctk.CTkFrame(
             self.container, height=50, fg_color="#1E293B", corner_radius=0
         )
@@ -93,38 +98,45 @@ class MainView(ctk.CTk):
         )
         self.lbl_current_module.pack(side="right", padx=20)
 
-    # ---------- 1. DASHBOARD PRINCIPAL ----------
+    # ---------- DASHBOARD PRINCIPAL ----------
     def _build_main_dashboard(self):
-        """Dashboard général (sans l'année académique, avec bouton Admin)."""
         self.main_dashboard_frame = ctk.CTkFrame(self.container, fg_color="transparent")
 
         header_frame = ctk.CTkFrame(self.main_dashboard_frame, fg_color="transparent")
-        header_frame.pack(pady=(30, 20))
+        header_frame.pack(pady=(10, 5))
 
-        ctk.CTkLabel(header_frame, text="🎓", font=ctk.CTkFont(size=44)).pack(
-            pady=(0, 5)
-        )
+        try:
+            pil_img = Image.open(LOGO_PATH)
+            # Taille ajustée à 100x100 pour libérer de l'espace vertical
+            self.logo_image = ctk.CTkImage(
+                light_image=pil_img, dark_image=pil_img, size=(100, 100)
+            )
+            ctk.CTkLabel(header_frame, image=self.logo_image, text="").pack(pady=10)
+        except Exception:
+            ctk.CTkLabel(header_frame, text="🎓", font=ctk.CTkFont(size=36)).pack(
+                pady=(0, 2)
+            )
 
         ctk.CTkLabel(
             header_frame,
             text="INSTITUT SUPÉRIEUR POLYTECHNIQUE\nSAINTE LUCIE D'OYO",
-            font=ctk.CTkFont(family="Helvetica", size=22, weight="bold"),
+            font=ctk.CTkFont(family="Helvetica", size=17, weight="bold"),
             text_color=self.COLOR_PRIMARY,
             justify="center",
-        ).pack(pady=(0, 6))
+        ).pack(pady=(0, 2))
 
         ctk.CTkLabel(
             header_frame,
             text="Système Intégré de Gestion Scolaire",
-            font=ctk.CTkFont(family="Helvetica", size=13),
+            font=ctk.CTkFont(family="Helvetica", size=12),
             text_color=self.COLOR_SUBTEXT,
         ).pack()
 
         cards_grid = ctk.CTkFrame(self.main_dashboard_frame, fg_color="transparent")
-        cards_grid.pack(expand=True, pady=(0, 20))
+        cards_grid.pack(expand=True, pady=(5, 10))
 
         # 1. Inscriptions
-        card_reg = self._create_card(
+        card_reg = self.create_card(
             master=cards_grid,
             icon="📝",
             title="Inscriptions & Réinscriptions",
@@ -133,209 +145,120 @@ class MainView(ctk.CTk):
                 "registration", "Inscriptions & Réinscriptions"
             ),
         )
-        card_reg.grid(row=0, column=0, padx=15, pady=15)
+        card_reg.grid(row=0, column=0, padx=10, pady=8)
 
         # 2. Paiements Mensuels
-        card_pay = self._create_card(
+        card_pay = self.create_card(
             master=cards_grid,
             icon="💳",
             title="Paiements Mensuels",
             description="Recherche d'étudiant, encaissement\ndes mensualités et reçus.",
             command=lambda: self.show_page("payment", "Gestion des Paiements Mensuels"),
         )
-        card_pay.grid(row=0, column=1, padx=15, pady=15)
+        card_pay.grid(row=0, column=1, padx=10, pady=8)
 
         # 3. Liste des Élèves
-        card_students = self._create_card(
+        card_students = self.create_card(
             master=cards_grid,
             icon="📋",
             title="Liste des Étudiants",
             description="Consultation, recherche et filtrage\ndes étudiants inscrits par classe.",
             command=lambda: self.show_page("student_list", "Liste des Élèves"),
         )
-        card_students.grid(row=1, column=0, padx=15, pady=15)
+        card_students.grid(row=0, column=2, padx=10, pady=8)
 
         # 4. Suivi des Paiements
-        card_stats = self._create_card(
+        card_stats = self.create_card(
             master=cards_grid,
             icon="📊",
             title="Suivi des Paiements",
             description="État des règlements par mois, rapports\ndes impayés et impression.",
             command=lambda: self.show_page("payment_stats", "Suivi des Paiements"),
         )
-        card_stats.grid(row=1, column=1, padx=15, pady=15)
+        card_stats.grid(row=1, column=0, padx=10, pady=8)
 
-        # 5. Tuile Administration (Redirige vers la page d'authentification)
-        card_admin = self._create_card(
+        # 5. Archives Étudiants
+        card_archive = self.create_card(
             master=cards_grid,
-            icon="🛡️",
+            icon="📁",
+            title="Archives Étudiants",
+            description="Consultation et recherche des étudiants\ndes années scolaires antérieures.",
+            command=lambda: self.show_page("student_archive", "Archives Étudiants"),
+        )
+        card_archive.grid(row=1, column=1, padx=10, pady=8)
+
+        # 6. Tuile Administration
+        card_admin = self.create_card(
+            master=cards_grid,
+            icon="🔒",
             title="Administration",
             description="Accès restreint pour la gestion\nscolaire globale et paramètres.",
             command=self.open_admin_flow,
         )
-        card_admin.grid(row=0, column=2, rowspan=2, padx=15, pady=15)
+        card_admin.grid(row=1, column=2, padx=10, pady=8)
 
-    # ---------- 2. PAGE D'AUTHENTIFICATION ADMIN ----------
-    def _build_admin_auth_page(self):
-        """Page intermédiaire de connexion demandant Nom d'utilisateur et Mot de passe."""
-        self.admin_auth_frame = ctk.CTkFrame(self.container, fg_color="transparent")
-
-        # Carte centrale de connexion
-        auth_card = ctk.CTkFrame(
-            self.admin_auth_frame,
-            width=420,
+    # ---------- REUTILISATION : CARTE DU DASHBOARD ----------
+    def create_card(self, master, icon, title, description, command):
+        """Génère une tuile uniforme et cliquable."""
+        card = ctk.CTkFrame(
+            master,
+            width=280,
+            height=175,  # Hauteur réduite pour laisser respirer l'interface
             fg_color=self.COLOR_CARD_BG,
-            corner_radius=16,
+            corner_radius=14,
             border_width=1,
             border_color="#334155",
         )
-        auth_card.pack(expand=True, pady=40, padx=20)
+        card.pack_propagate(False)
 
-        ctk.CTkLabel(auth_card, text="🔐", font=ctk.CTkFont(size=48)).pack(
-            pady=(30, 10)
-        )
+        card.bind("<Button-1>", lambda e: command())
 
-        ctk.CTkLabel(
-            auth_card,
-            text="Espace Administration",
-            font=ctk.CTkFont(family="Helvetica", size=20, weight="bold"),
-            text_color=self.COLOR_TEXT,
-        ).pack(pady=(0, 5))
-
-        ctk.CTkLabel(
-            auth_card,
-            text="Veuillez saisir vos identifiants pour continuer",
-            font=ctk.CTkFont(size=12),
-            text_color=self.COLOR_SUBTEXT,
-        ).pack(pady=(0, 25))
-
-        # Champ Nom d'utilisateur
-        lbl_user = ctk.CTkLabel(
-            auth_card,
-            text="Nom d'utilisateur",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.COLOR_TEXT,
-            anchor="w",
-        )
-        lbl_user.pack(fill="x", padx=40, pady=(0, 5))
-
-        self.entry_username = ctk.CTkEntry(
-            auth_card,
-            placeholder_text="Entrez votre nom...",
-            height=40,
-            fg_color="#0F172A",
-            border_color="#334155",
-            text_color=self.COLOR_TEXT,
-        )
-        self.entry_username.pack(fill="x", padx=40, pady=(0, 15))
-
-        # Champ Mot de Passe
-        lbl_pwd = ctk.CTkLabel(
-            auth_card,
-            text="Mot de passe",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=self.COLOR_TEXT,
-            anchor="w",
-        )
-        lbl_pwd.pack(fill="x", padx=40, pady=(0, 5))
-
-        self.entry_password = ctk.CTkEntry(
-            auth_card,
-            show="•",
-            placeholder_text="Entrez votre mot de passe...",
-            height=40,
-            fg_color="#0F172A",
-            border_color="#334155",
-            text_color=self.COLOR_TEXT,
-        )
-        self.entry_password.pack(fill="x", padx=40, pady=(0, 20))
-        self.entry_password.bind("<Return>", lambda e: self._handle_admin_login())
-
-        # Boutons de Validation / Annulation
-        btn_box = ctk.CTkFrame(auth_card, fg_color="transparent")
-        btn_box.pack(fill="x", padx=40, pady=(0, 30))
-
-        ctk.CTkButton(
-            btn_box,
-            text="Annuler",
-            fg_color="#334155",
-            hover_color="#475569",
-            height=38,
-            width=110,
-            command=self.show_dashboard,
-        ).pack(side="left")
-
-        ctk.CTkButton(
-            btn_box,
-            text="Se connecter",
-            fg_color=self.COLOR_PRIMARY,    
-            hover_color="#2563EB",   
-            height=38,
-            width=180,
-            font=ctk.CTkFont(weight="bold"),
-            command=self._handle_admin_login,
-        ).pack(side="right", padx=(10, 0))  # Marge de 10px à gauche pour séparer les deux boutons
-
-    # ---------- 3. DASHBOARD ADMIN ----------
-    def _build_admin_dashboard(self):
-        """Dashboard Administration débloqué (contient l'Année Académique)."""
-        self.admin_dashboard_frame = ctk.CTkFrame(
-            self.container, fg_color="transparent"
-        )
-
-        header_frame = ctk.CTkFrame(self.admin_dashboard_frame, fg_color="transparent")
-        header_frame.pack(pady=(40, 30))
-
-        ctk.CTkLabel(header_frame, text="🛡️", font=ctk.CTkFont(size=48)).pack(
-            pady=(0, 10)
-        )
-
-        ctk.CTkLabel(
-            header_frame,
-            text="PANNEAU D'ADMINISTRATION",
-            font=ctk.CTkFont(family="Helvetica", size=22, weight="bold"),
-            text_color="#F59E0B",  # Ambre
+        lbl_icon = ctk.CTkLabel(
+            card,
+            text=icon,
+            font=ctk.CTkFont(size=32),
+            anchor="center",
             justify="center",
-        ).pack(pady=(0, 8))
-
-        ctk.CTkLabel(
-            header_frame,
-            text="INSTITUT SUPÉRIEUR POLYTECHNIQUE SAINTE LUCIE D'OYO",
-            font=ctk.CTkFont(family="Helvetica", size=12, weight="bold"),
-            text_color=self.COLOR_SUBTEXT,
-        ).pack()
-
-        cards_grid = ctk.CTkFrame(self.admin_dashboard_frame, fg_color="transparent")
-        cards_grid.pack(expand=True, pady=(0, 20))
-
-        # --- Tuile unique dans l'Espace Admin : Année Académique ---
-        card_year = self._create_card(
-            master=cards_grid,
-            icon="📅",
-            title="Année Académique",
-            description="Clôturer l'année active, configurer\nla nouvelle et gérer la session.",
-            command=lambda: self.show_page(
-                "academic_year",
-                "Administration - Année Académique",
-                from_admin=True,
-            ),
         )
-        card_year.pack(side="left", padx=20, pady=10)
+        lbl_icon.pack(fill="x", pady=(12, 4))
+        lbl_icon.bind("<Button-1>", lambda e: command())
 
-        # Bouton Retour au Dashboard général
-        ctk.CTkButton(
-            self.admin_dashboard_frame,
-            text="← Quitter l'Administration",
-            fg_color="#DC2626",      # Rouge vif (Red 600)
-            hover_color="#B91C1C",   # Rouge plus foncé au survol (Red 700)
+        lbl_title = ctk.CTkLabel(
+            card,
+            text=title,
+            font=ctk.CTkFont(family="Helvetica", size=14, weight="bold"),
             text_color=self.COLOR_TEXT,
-            height=40,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            command=self.show_dashboard,
-        ).pack(pady=(0, 30))
+        )
+        lbl_title.pack(pady=(0, 4))
+        lbl_title.bind("<Button-1>", lambda e: command())
+
+        lbl_desc = ctk.CTkLabel(
+            card,
+            text=description,
+            font=ctk.CTkFont(size=10),
+            text_color=self.COLOR_SUBTEXT,
+            justify="center",
+        )
+        lbl_desc.pack(padx=10, pady=(0, 8))
+        lbl_desc.bind("<Button-1>", lambda e: command())
+
+        def on_enter(e):
+            card.configure(
+                fg_color=self.COLOR_CARD_HOVER, border_color=self.COLOR_PRIMARY
+            )
+            card.configure(cursor="hand2")
+
+        def on_leave(e):
+            card.configure(fg_color=self.COLOR_CARD_BG, border_color="#334155")
+            card.configure(cursor="")
+
+        card.bind("<Enter>", on_enter)
+        card.bind("<Leave>", on_leave)
+
+        return card
 
     # ---------- REUTILISATION : CARTE DU DASHBOARD ----------
-    def _create_card(self, master, icon, title, description, command):
+    def create_card(self, master, icon, title, description, command):
         """Génère une tuile uniforme et cliquable."""
         card = ctk.CTkFrame(
             master,
@@ -350,8 +273,14 @@ class MainView(ctk.CTk):
 
         card.bind("<Button-1>", lambda e: command())
 
-        lbl_icon = ctk.CTkLabel(card, text=icon, font=ctk.CTkFont(size=36))
-        lbl_icon.pack(pady=(20, 8))
+        lbl_icon = ctk.CTkLabel(
+            card,
+            text=icon,
+            font=ctk.CTkFont(size=36),
+            anchor="center",
+            justify="center",
+        )
+        lbl_icon.pack(fill="x", pady=(20, 8))
         lbl_icon.bind("<Button-1>", lambda e: command())
 
         lbl_title = ctk.CTkLabel(
@@ -388,34 +317,14 @@ class MainView(ctk.CTk):
 
         return card
 
-    # ---------- LOGIQUE DE VALIDATION ADMIN ----------
+    # ---------- GESTION DES FLUX DE NAVIGATION ----------
     def open_admin_flow(self):
-        """Redirige vers le Dashboard Admin si déjà connecté, sinon vers la page de login."""
         if self.is_admin_authenticated:
             self.show_admin_dashboard()
         else:
             self.show_admin_auth()
 
-    def _handle_admin_login(self):
-        """Vérifie le Nom et le Mot de passe."""
-        username = self.entry_username.get().strip()
-        password = self.entry_password.get()
-
-        if username == self.ADMIN_USERNAME and password == self.ADMIN_PASSWORD:
-            self.is_admin_authenticated = True
-            # Vider les champs
-            self.entry_username.delete(0, "end")
-            self.entry_password.delete(0, "end")
-            self.show_admin_dashboard()
-        else:
-            messagebox.showerror(
-                "Échec d'authentification",
-                "Nom d'utilisateur ou mot de passe incorrect.",
-            )
-
-    # ---------- GESTION DES AFFICHAGES / NAVIGATION ----------
     def _hide_all_containers(self):
-        """Masque l'intégralité des conteneurs pour permettre une bascule propre."""
         self.top_bar.pack_forget()
         self.page_container.pack_forget()
         self.main_dashboard_frame.pack_forget()
@@ -426,26 +335,21 @@ class MainView(ctk.CTk):
             view.pack_forget()
 
     def show_dashboard(self):
-        """Affiche le menu principal."""
         self._hide_all_containers()
         self.main_dashboard_frame.pack(fill="both", expand=True)
 
     def show_admin_auth(self):
-        """Affiche la page de saisie du nom et du mot de passe."""
         self._hide_all_containers()
         self.admin_auth_frame.pack(fill="both", expand=True)
-        self.entry_username.focus_set()
+        self.admin_auth_frame.focus_input()
 
     def show_admin_dashboard(self):
-        """Affiche l'Espace Admin avec l'Année Académique."""
         self._hide_all_containers()
         self.admin_dashboard_frame.pack(fill="both", expand=True)
 
     def show_page(self, page_key: str, title: str, from_admin: bool = False):
-        """Affiche l'un des 5 formulaires applicatifs."""
         self._hide_all_containers()
 
-        # Configuration du bouton de retour selon l'origine
         if from_admin:
             self.btn_back.configure(
                 text="← Menu Admin", command=self.show_admin_dashboard

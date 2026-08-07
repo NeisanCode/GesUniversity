@@ -17,7 +17,7 @@ class StudentEditModalLevel(ctk.CTkToplevel):
         self.get_classes_callback = get_classes_callback
         self.on_save_callback = on_save_callback
 
-        self.title("Modifier l'élève")
+        self.title("Modifier l'étudiant")
         # Hauteur réduite pour s'adapter aux petits écrans (ex: 760p / 1080p avec scaling)
         self.geometry("500x560")
         self.resizable(False, True)
@@ -32,7 +32,7 @@ class StudentEditModalLevel(ctk.CTkToplevel):
         # En-tête fixe
         ctk.CTkLabel(
             self,
-            text="✏️ MODIFIER L'ÉLÈVE",
+            text="✏️ MODIFIER L'étudiant",
             font=("Helvetica", 13, "bold"),
             text_color="#38bdf8",
         ).pack(pady=(12, 8))
