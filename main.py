@@ -1,6 +1,8 @@
 import sys
 import customtkinter as ctk
-from interfaces.form.student_list_form import StudentListFormFrame
+
+from interfaces.form.student_list.student_list_form import StudentListFormFrame
+
 
 # Correctif DPI Windows
 if sys.platform.startswith("win"):
