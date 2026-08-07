@@ -1,2 +1,2 @@
-from .student_list_service import StudentListService
+from .academic_year_service import AcademicYearService
 

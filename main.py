@@ -1,6 +1,6 @@
 import sys
 import customtkinter as ctk
-from interfaces.form.student_list_form import StudentListFormFrame
+from interfaces import AcademicYearFormFrame
 
 # Correctif DPI Windows
 if sys.platform.startswith("win"):
@@ -26,7 +26,7 @@ class MainInterface(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.current_form = StudentListFormFrame(self)
+        self.current_form = AcademicYearFormFrame(self)
         self.current_form.grid(row=0, column=0, sticky="nsew")
 
         # 2. Gestion propre du redimensionnement Windows

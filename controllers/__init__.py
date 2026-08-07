@@ -1,1 +1,1 @@
-from .student_list_controller import StudentListController
+from .academic_year_controller import AcademicYearController
