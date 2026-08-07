@@ -6,3 +6,4 @@ from .form.monthly_payement.month_payment_form import MonthlyPaymentFormFrame
 from .form.student_list.student_list_form import StudentListFormFrame
 from .form.student_list.student_edit_level import StudentEditModalLevel
 from .form.payment_stat.payment_stat_form import PaymentStatsFormFrame
+from .form.manage_academique_year.academic_year_form import AcademicYearFormFrame
