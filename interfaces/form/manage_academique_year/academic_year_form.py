@@ -2,8 +2,9 @@ import customtkinter as ctk
 from controllers import AcademicYearController
 
 
-class AcademicYearFormFrame(ctk.CTkFrame):
+class AcademicYearFormFrame(ctk.CTkScrollableFrame):
     def __init__(self, parent):
+        # Utilisation de CTkScrollableFrame avec couleur transparente
         super().__init__(parent, fg_color="transparent")
 
         self.controller = AcademicYearController(self)
@@ -170,7 +171,7 @@ class AcademicYearFormFrame(ctk.CTkFrame):
             height=40,
             font=("Helvetica", 12, "bold"),
         )
-        btn_close.pack(fill="x", padx=20, pady=(0, 20))
+        btn_close.pack(fill="x", padx=20, pady=(10, 25))
 
     def update_active_year_display(self, label: str, status: str):
         self.lbl_active_year_val.configure(state="normal")
