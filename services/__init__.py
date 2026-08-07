@@ -4,3 +4,4 @@ from .month_payment_service import MonthlyPaymentService
 from .student_list_service import StudentListService
 from .academic_year_service import AcademicYearService
 from .payment_stat_service import PaymentStatsService
+from .student_archive_service import StudentArchiveService

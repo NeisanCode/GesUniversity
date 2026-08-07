@@ -4,3 +4,4 @@ from .month_payment_controller import MonthlyPaymentController
 from .student_list_controller import StudentListController
 from .payment_stat_controller import PaymentStatsController
 from .academic_year_controller import AcademicYearController
+from .student_archive_controller import StudentArchiveController
