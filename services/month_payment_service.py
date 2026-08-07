@@ -100,48 +100,53 @@ class MonthlyPaymentService:
             # Retourner directement un ReceiptDTO immunisé contre les erreurs de session
             return self._map_receipt_to_dto(receipt, active_enrollment)
 
-    def _map_receipt_to_dto(self, receipt: Receipt, enrollment: Enrollment) -> PaymentReceiptDTO:
+    def _map_receipt_to_dto(
+        self, receipt: Receipt, enrollment: Enrollment
+    ) -> PaymentReceiptDTO:
         """Helper privé pour transformer une entité ORM Receipt en ReceiptDTO sécurisé."""
         program = enrollment.class_group.program
         academic_year = enrollment.academic_year
+        with self.session_factory() as session:
+            # 1. Récupérer les échéances (installments) pour calculer exactement les mêmes chiffres que le formulaire
+            repo = MonthlyPaymentRepo(session)
+            installments = repo.build_installment_summaries(enrollment)
 
-        total_program_fees = sum(
-            f.amount for f in program.fees if f.academic_year_id == academic_year.id
-        )
-        total_paid_so_far = sum(p.amount_paid for p in enrollment.payments)
-        remaining_balance = max(0.0, total_program_fees - total_paid_so_far)
+            # 2. Utiliser tes méthodes de calcul existantes
+            total_program_fees = self.calculate_total_fee(installments)
+            total_paid_so_far = self.calculate_total_paid(installments)
+            remaining_balance = self.calculate_remaining_balance(installments)
 
-        payment = receipt.payment
-        installment = payment.installment if payment else None
+            payment = receipt.payment
+            installment = payment.installment if payment else None
 
-        month_name = "N/A"
-        if installment and installment.month:
-            month_name = (
-                installment.month.value
-                if hasattr(installment.month, "value")
-                else str(installment.month)
+            month_name = "N/A"
+            if installment and installment.month:
+                month_name = (
+                    installment.month.value
+                    if hasattr(installment.month, "value")
+                    else str(installment.month)
+                )
+
+            return PaymentReceiptDTO(
+                receipt_number=receipt.receipt_number,
+                receipt_date=receipt.receipt_date,
+                student_id_number=enrollment.student.student_id_number,
+                student_last_name=enrollment.student.last_name,
+                student_first_name=enrollment.student.first_name,
+                payment_date=payment.payment_date if payment else date.today(),
+                payment_method=(
+                    payment.payment_method.value
+                    if payment and hasattr(payment.payment_method, "value")
+                    else str(payment.payment_method)
+                ),
+                class_name=f"{program.major.name} - {program.level.name} ({enrollment.class_group.name})",
+                academic_year_label=academic_year.label,
+                month_name=month_name,
+                amount_paid=payment.amount_paid if payment else 0.0,
+                total_program_fees=total_program_fees,
+                total_paid_so_far=total_paid_so_far,
+                remaining_balance=remaining_balance,
             )
-
-        return PaymentReceiptDTO(
-            receipt_number=receipt.receipt_number,
-            receipt_date=receipt.receipt_date,
-            student_id_number=enrollment.student.student_id_number,
-            student_last_name=enrollment.student.last_name,
-            student_first_name=enrollment.student.first_name,
-            payment_date=payment.payment_date if payment else date.today(),
-            payment_method=(
-                payment.payment_method.value
-                if payment and hasattr(payment.payment_method, "value")
-                else str(payment.payment_method)
-            ),
-            class_name=f"{program.major.name} - {program.level.name} ({enrollment.class_group.name})",
-            academic_year_label=academic_year.label,
-            month_name=month_name,
-            amount_paid=payment.amount_paid if payment else 0.0,
-            total_program_fees=total_program_fees,
-            total_paid_so_far=total_paid_so_far,
-            remaining_balance=remaining_balance,
-        )
 
     # --- Méthodes inchangées ---
     def get_available_months(self, all_months, installments):
@@ -150,7 +155,8 @@ class MonthlyPaymentService:
             month
             for month in all_months
             if month not in paid_months
-            and month in {item["month"] for item in installments if not item.get("paid")}
+            and month
+            in {item["month"] for item in installments if not item.get("paid")}
         ]
 
     def get_installment_amount(self, installments, month_value):
