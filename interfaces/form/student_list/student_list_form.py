@@ -363,9 +363,7 @@ class StudentListFormFrame(ctk.CTkFrame):
         for lbl in row_labels:
             lbl.configure(fg_color=color)
 
-    def _on_row_click(
-        self, student: dict, row_labels: list, base_bg: str, flash_bg: str
-    ):
+    def _on_row_click(self, student: dict, row_labels: list, base_bg: str, flash_bg: str):
         def reset_and_open():
             for lbl in row_labels:
                 lbl.configure(fg_color=base_bg)
