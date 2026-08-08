@@ -203,13 +203,7 @@ Pour distribuer l'application sous forme de programme autonome sans nécessiter 
 Depuis la racine du projet, lancez :
 
 ```bash
-uv run nuitka --standalone \
-  --windows-console-mode=disable \
-  --enable-plugin=tk-inter \
-  --include-data-dir=assets=assets \
-  --include-data-files=LICENSE=LICENSE \
-  --windows-icon-from-ico=assets/app_icon.ico \
-  main.py
+uv run nuitka --standalone --windows-console-mode=disable --enable-plugin=tk-inter --include-data-dir=assets=assets --include-data-files=LICENSE=LICENSE --windows-icon-from-ico=assets/app_icon.ico main.py
 ```
 
 
