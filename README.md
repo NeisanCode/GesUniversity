@@ -18,8 +18,7 @@ GesUniversity est une application desktop de gestion scolaire robuste et moderne
 10. [Identifiants administrateur](#identifiants-administrateur)
 11. [Compilation & Distribution (Nuitka)](#compilation--distribution-nuitka)
 12. [Gestion de la Base de Données en Production](#gestion-de-la-base-de-données-en-production)
-13. [Notes importantes](#notes-importantes)
-14. [Feuille de route & Améliorations futures](#feuille-de-route--améliorations-futures)
+13. [Besoin d'aide ou de support](#besoin-daide-ou-de-support)
 
 ---
 
