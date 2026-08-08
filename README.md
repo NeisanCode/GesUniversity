@@ -3,7 +3,7 @@
 GesUniversity est une application desktop de gestion scolaire robuste et moderne développée en Python avec CustomTkinter. Conçue spécifiquement pour répondre aux besoins opérationnels de l'**Institut Supérieur Polytechnique Sainte Lucie d'Oyo (ISPSL)**, elle permet de centraliser et d'automatiser l'intégralité des flux administratifs : inscriptions, réinscriptions, encaissement des mensualités, génération de reçus PDF, suivi des impayés, consultation de la liste des élèves et gestion des archives scolaires.
 
 ## Logo du projet
-
+![interface d'acceuil](/preview/app.png)
 ## Sommaire
 
 1. [Objectif du projet](#objectif-du-projet)
@@ -203,7 +203,7 @@ Pour distribuer l'application sous forme de programme autonome sans nécessiter 
 Depuis la racine du projet, lancez :
 
 ```bash
-uv run nuitka --standalone --windows-console-mode=disable --enable-plugin=tk-inter --include-data-dir=assets=assets --include-data-files=LICENSE=LICENSE --windows-icon-from-ico=assets/app_icon.ico main.py
+uv run nuitka --standalone --windows-console-mode=disable --enable-plugin=tk-inter --include-data-dir=assets=assets --include-data-files=LICENSE.txt=LICENSE.txt --windows-icon-from-ico=assets/app_icon.ico main.py
 ```
 
 
