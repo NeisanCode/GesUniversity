@@ -1,0 +1,81 @@
+# GESUNIVERSITY - LICENCE DE LOGICIEL PROPRIÉTAIRE
+
+Droits d'auteur (c) 2026 Neisan Mister
+Tous droits réservés.
+
+
+1. PROPRIÉTÉ
+
+GesUniversity, y compris son code source, fichiers exécutables, documentation,
+interface graphique, ressources, conceptions et autres matériaux associés,
+est la propriété exclusive de Neisan Mister, sauf disposition contraire.
+
+
+2. CONCESSION DE LICENCE
+
+Sous réserve des termes de cette licence, l'auteur accorde à l'utilisateur
+un droit limité, non exclusif, non transférable et révocable d'utiliser
+GesUniversity à sa fin prévue.
+
+Cette licence ne transfère pas la propriété du logiciel à l'utilisateur.
+
+
+3. RESTRICTIONS
+
+Sans autorisation écrite préalable de l'auteur, l'utilisateur ne peut pas :
+
+- Vendre ou revendre le logiciel ;
+- Louer, donner en location, accorder une sous-licence ou distribuer
+  commercialement le logiciel ;
+- Redistribuer ou partager des copies du logiciel en dehors de la distribution
+  autorisée ;
+- Modifier, adapter ou créer des œuvres dérivées du logiciel ;
+- Copier le logiciel ou ses composants, sauf si cela est nécessaire pour
+  l'utilisation autorisée ;
+- Décompiler, désassembler, rétro-ingéniérer ou tenter d'obtenir le code
+  source du logiciel, sauf lorsqu'une telle activité ne peut être légalement
+  restreinte selon la loi applicable ;
+- Supprimer ou modifier les avis de droits d'auteur, marque déposée, licence
+  ou propriété.
+
+
+4. UTILISATION COMMERCIALE
+
+Toute utilisation commerciale, revente, redistribution, concession de licence
+ou intégration de GesUniversity dans un autre produit ou service commercial
+nécessite une autorisation écrite préalable de l'auteur.
+
+
+5. COMPOSANTS TIERS
+
+GesUniversity peut inclure des bibliothèques ou composants tiers qui sont
+distribués selon leurs propres licences. Ces composants restent soumis à
+leurs licences respectives.
+
+Cette licence s'applique uniquement aux composants dont l'auteur est
+propriétaire.
+
+
+6. RÉSILIATION
+
+Tous les droits accordés en vertu de cette licence se terminent automatiquement
+si l'utilisateur viole les termes de cette licence.
+
+À la résiliation, l'utilisateur doit cesser d'utiliser et de distribuer le
+logiciel dans la mesure permise par la loi applicable.
+
+
+7. CLAUSE DE NON-GARANTIE
+
+GesUniversity est fourni « tel quel », sans garanties d'aucune sorte, dans
+la mesure maximale permise par la loi applicable.
+
+
+8. CONTACT
+
+Pour obtenir la permission de redistribuer, modifier, utiliser commercialement
+ou autrement accorder une licence à GesUniversity, contactez le titulaire
+des droits d'auteur.
+
+Droits d'auteur (c) 2026 PONGUI NATHAN & MARDOCHÉE YARDEN BOUSS
+Tous droits réservés.

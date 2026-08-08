@@ -2,7 +2,7 @@
 
 GesUniversity est une application desktop de gestion scolaire robuste et moderne développée en Python avec CustomTkinter. Conçue spécifiquement pour répondre aux besoins opérationnels de l'**Institut Supérieur Polytechnique Sainte Lucie d'Oyo (ISPSL)**, elle permet de centraliser et d'automatiser l'intégralité des flux administratifs : inscriptions, réinscriptions, encaissement des mensualités, génération de reçus PDF, suivi des impayés, consultation de la liste des élèves et gestion des archives scolaires.
 
-## ![Logo du projet](/preview/app.png)
+## Logo du projet
 
 ## Sommaire
 
@@ -22,11 +22,15 @@ GesUniversity est une application desktop de gestion scolaire robuste et moderne
 
 ---
 
+
+
 ## Objectif du projet
 
 L'objectif principal de GesUniversity est de fournir à l'administration de l'ISPSL un outil bureautique hors-ligne, fluide, sécurisé et prêt à l'emploi. Il élimine le suivi manuel sur papier ou tableur en offrant une traçabilité rigoureuse des transactions financières et un accès instantané aux dossiers administratifs des étudiants.
 
 ---
+
+
 
 ## Fonctionnalités principales
 
@@ -51,6 +55,8 @@ L'objectif principal de GesUniversity est de fournir à l'administration de l'IS
 
 ---
 
+
+
 ## Technologies utilisées
 
 - **Langage principal :** Python 3.13+
@@ -64,18 +70,22 @@ L'objectif principal de GesUniversity est de fournir à l'administration de l'IS
 
 ---
 
+
+
 ## Architecture du projet
 
 Le projet applique une architecture en couches type **MVC (Model-View-Controller)** couplée au pattern **Repository / Service**, garantissant une séparation nette des responsabilités, un code maintenable et facilement testable :
 
-- **`models/`** : Définition des entités SQLAlchemy (Mappage BDD) et des DTOs (_Data Transfer Objects_).
-- **`repositories/`** : Couche d'accès aux données. Encapsule toutes les requêtes SQLite/SQLAlchemy.
-- **`services/`** : Logique métier, règles de validation et opérations financières/administratives.
-- **`controllers/`** : Intermédiaire entre la logique métier et l'interface graphique.
-- **`interfaces/`** : Vues CustomTkinter, formulaires, tableaux et fenêtres modales.
-- **`database/`** : Configuration des sessions SQLAlchemy et gestion du cycle de vie de la connexion SQLite.
+- `models/` : Définition des entités SQLAlchemy (Mappage BDD) et des DTOs (*Data Transfer Objects*).
+- `repositories/` : Couche d'accès aux données. Encapsule toutes les requêtes SQLite/SQLAlchemy.
+- `services/` : Logique métier, règles de validation et opérations financières/administratives.
+- `controllers/` : Intermédiaire entre la logique métier et l'interface graphique.
+- `interfaces/` : Vues CustomTkinter, formulaires, tableaux et fenêtres modales.
+- `database/` : Configuration des sessions SQLAlchemy et gestion du cycle de vie de la connexion SQLite.
 
 ---
+
+
 
 ## Structure du dépôt
 
@@ -99,37 +109,41 @@ GesUniversity/
 
 ---
 
+
+
 ## Prérequis
 
 Avant de lancer l’application ou de procéder à la compilation, veillez à disposer de :
 
 1. **Python 3.13+**
-2. **`uv` (Gestionnaire de paquets Astral)** : [Instructions d'installation `uv`](https://astral.sh/uv)
+2. `uv` **(Gestionnaire de paquets Astral)** : [Instructions d'installation](https://astral.sh/uv) `uv`
 3. **Microsoft Visual C++ Redistributable 2015-2022** (nécessaire sur l'ordinateur de développement pour la compilation C++ via Nuitka).
 
 ---
 
+
+
 ## Installation
 
 1. Cloner le dépôt Git du projet :
-
-   ```bash
+  ```bash
    git clone <url-du-depot>
    cd GesUniversity
-   ```
-
+  ```
 2. Synchroniser et créer l'environnement virtuel avec `uv` :
-   ```bash
+  ```bash
    uv sync
-   ```
+  ```
 
-_(Optionnel, si vous utilisez le gestionnaire `pip` standard)_ :
+*(Optionnel, si vous utilisez le gestionnaire* `pip` *standard)* :
 
 ```bash
 pip install -e .
 ```
 
 ---
+
+
 
 ## Initialisation de la base de données
 
@@ -149,6 +163,8 @@ python -m seed.db_test
 
 ---
 
+
+
 ## Lancement de l'application
 
 Pour exécuter l'application en mode développement :
@@ -165,6 +181,8 @@ python main.py
 
 ---
 
+
+
 ## Identifiants administrateur
 
 L'accès au panneau d'administration s'effectue avec les identifiants par défaut suivants :
@@ -173,6 +191,8 @@ L'accès au panneau d'administration s'effectue avec les identifiants par défau
 - **Mot de passe :** `admin123`
 
 ---
+
+
 
 ## Compilation & Distribution (Nuitka)
 
@@ -183,8 +203,16 @@ Pour distribuer l'application sous forme de programme autonome sans nécessiter 
 Depuis la racine du projet, lancez :
 
 ```bash
-uv run nuitka --standalone --windows-console-mode=disable --enable-plugin=tk-inter --include-data-dir=assets=assets --windows-icon-from-ico=assets/app_icon.ico main.py
+uv run nuitka --standalone \
+  --windows-console-mode=disable \
+  --enable-plugin=tk-inter \
+  --include-data-dir=assets=assets \
+  --include-data-files=LICENSE=LICENSE \
+  --windows-icon-from-ico=assets/app_icon.ico \
+  main.py
 ```
+
+
 
 ### Signification des options :
 
@@ -192,17 +220,21 @@ uv run nuitka --standalone --windows-console-mode=disable --enable-plugin=tk-int
 - `--windows-console-mode=disable` : Supprime la fenêtre d'invite de commande noire au lancement de la GUI.
 - `--enable-plugin=tk-inter` : Inclut et configure les dépendances graphiques de Tkinter/CustomTkinter.
 - `--include-data-dir=assets=assets` : Copie le dossier `assets/` (images, logo) à l'intérieur du dossier compilé.
+- `--include-data-files=LICENSE=LICENSE` : Copie le fichier de licence `LICENSE` directement à la racine du dossier compilé.
+- `--windows-icon-from-ico=assets/app_icon.ico` : Applique l'icône de l'application à l'exécutable `.exe` sous Windows.
 
 ---
 
+
+
 ## Gestion de la Base de Données en Production
 
-Afin d'éviter toute perte de données lors des mises à jour applicatives, **la base de données `school.db` est conservée en dehors de l'exécutable**.
+Afin d'éviter toute perte de données lors des mises à jour applicatives, **la base de données** `school.db` **est conservée en dehors de l'exécutable**.
 
 ### Procédure de préparation du livrable final :
 
-1. À la fin de la compilation, ouvrez le dossier **`main.dist/`** généré à la racine.
-2. Copiez votre dossier **`data/`** (contenant le fichier `school.db`) directement dans **`main.dist/`**, au même niveau que `main.exe`.
+1. À la fin de la compilation, ouvrez le dossier `main.dist/` généré à la racine.
+2. Copiez votre dossier `data/` (contenant le fichier `school.db`) directement dans `main.dist/`, au même niveau que `main.exe`.
 3. Vous obtenez la structure de distribution suivante :
 
 ```text
@@ -214,14 +246,17 @@ main.dist/
 └── ...              # Bibliothèques DLL et binaires C++
 ```
 
-4. Compressez l'intégralité du dossier `main.dist` au format `.zip` pour diffusion aux utilisateurs finaux.
+1. Compressez l'intégralité du dossier `main.dist` au format `.zip` pour diffusion aux utilisateurs finaux.
 
 ---
+
+
 
 ### Besoin d'aide ou de support ?
 
 Pour toute question, suggestion ou rapport de bug :
 
-- 📧 Consultez la section _Issues_ du dépôt
+- 📧 Consultez la section *Issues* du dépôt
 - 📖 Vérifiez la documentation technique dans les fichiers du projet
-- 💬 N'hésitez pas à contribuer via des _Pull Requests_
+- 💬 N'hésitez pas à contribuer via des *Pull Requests*
+

@@ -1,6 +1,10 @@
 import customtkinter as ctk
 from PIL import Image
-from config import LOGO_PATH
+from config import LOGO_PATH, ICON_PATH
+
+
+# Importation du composant modal isolé
+from .info_modal import InfoModal
 
 # Importation des vues / formulaires
 from .form.enrollment.registration_form import RegistrationForm
@@ -20,6 +24,7 @@ class MainView(ctk.CTk):
         self.title("Système de Gestion Scolaire - ISPSL")
         self.geometry("1180x800")
         self.minsize(1000, 700)
+        self.iconbitmap(ICON_PATH)
 
         # Palette de couleurs globale
         self.COLOR_BG = "#0F172A"
@@ -35,6 +40,9 @@ class MainView(ctk.CTk):
         self.ADMIN_USERNAME = "admin"
         self.ADMIN_PASSWORD = "admin123"
         self.is_admin_authenticated = False
+
+        # Référence de la modale
+        self.info_window = None
 
         # Conteneur racine
         self.container = ctk.CTkFrame(self, fg_color="transparent")
@@ -64,7 +72,7 @@ class MainView(ctk.CTk):
         # Démarrage sur le Dashboard Principal
         self.show_dashboard()
 
-    # ---------- BARRE DE NAVIGATION SUPÉRIEURE ----------
+    # ---------- BARRE DE NAVIGATION SUPÉRIEURE (PAGES INTERNES) ----------
     def _build_top_bar(self):
         self.top_bar = ctk.CTkFrame(
             self.container, height=50, fg_color="#1E293B", corner_radius=0
@@ -96,18 +104,41 @@ class MainView(ctk.CTk):
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=self.COLOR_PRIMARY,
         )
-        self.lbl_current_module.pack(side="right", padx=20)
+        self.lbl_current_module.pack(side="right", padx=15)
 
-    # ---------- DASHBOARD PRINCIPAL ----------
+    # ---------- DASHBOARD PRINCIPAL (ACCUEIL) ----------
     def _build_main_dashboard(self):
         self.main_dashboard_frame = ctk.CTkFrame(self.container, fg_color="transparent")
 
+        # Barre supérieure spécifique à l'accueil
+        top_home_bar = ctk.CTkFrame(
+            self.main_dashboard_frame, fg_color="transparent", height=40
+        )
+        top_home_bar.pack(fill="x", padx=15, pady=(10, 0))
+
+        # Bouton À propos directement sur l'accueil (en haut à droite)
+        btn_about = ctk.CTkButton(
+            top_home_bar,
+            text="❔À propos",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=self.COLOR_CARD_BG,
+            text_color=self.COLOR_TEXT,
+            hover_color=self.COLOR_CARD_HOVER,
+            border_width=1,
+            border_color="#334155",
+            width=100,
+            height=32,
+            corner_radius=8,
+            command=self.open_info_modal,
+        )
+        btn_about.pack(side="right")
+
+        # En-tête (Logo + Titre)
         header_frame = ctk.CTkFrame(self.main_dashboard_frame, fg_color="transparent")
-        header_frame.pack(pady=(10, 5))
+        header_frame.pack(pady=(0, 5))
 
         try:
             pil_img = Image.open(LOGO_PATH)
-            # Taille ajustée à 100x100 pour libérer de l'espace vertical
             self.logo_image = ctk.CTkImage(
                 light_image=pil_img, dark_image=pil_img, size=(100, 100)
             )
@@ -197,13 +228,28 @@ class MainView(ctk.CTk):
         )
         card_admin.grid(row=1, column=2, padx=10, pady=8)
 
+    # ---------- OUVERTURE DE LA MODALE INFOS ----------
+    def open_info_modal(self):
+        if self.info_window is not None and self.info_window.winfo_exists():
+            self.info_window.focus()
+            return
+
+        colors = {
+            "BG": self.COLOR_BG,
+            "CARD_BG": self.COLOR_CARD_BG,
+            "PRIMARY": self.COLOR_PRIMARY,
+            "TEXT": self.COLOR_TEXT,
+            "SUBTEXT": self.COLOR_SUBTEXT,
+        }
+        self.info_window = InfoModal(self, colors)
+
     # ---------- REUTILISATION : CARTE DU DASHBOARD ----------
     def create_card(self, master, icon, title, description, command):
         """Génère une tuile uniforme et cliquable."""
         card = ctk.CTkFrame(
             master,
             width=280,
-            height=175,  # Hauteur réduite pour laisser respirer l'interface
+            height=175,
             fg_color=self.COLOR_CARD_BG,
             corner_radius=14,
             border_width=1,
@@ -240,66 +286,6 @@ class MainView(ctk.CTk):
             justify="center",
         )
         lbl_desc.pack(padx=10, pady=(0, 8))
-        lbl_desc.bind("<Button-1>", lambda e: command())
-
-        def on_enter(e):
-            card.configure(
-                fg_color=self.COLOR_CARD_HOVER, border_color=self.COLOR_PRIMARY
-            )
-            card.configure(cursor="hand2")
-
-        def on_leave(e):
-            card.configure(fg_color=self.COLOR_CARD_BG, border_color="#334155")
-            card.configure(cursor="")
-
-        card.bind("<Enter>", on_enter)
-        card.bind("<Leave>", on_leave)
-
-        return card
-
-    # ---------- REUTILISATION : CARTE DU DASHBOARD ----------
-    def create_card(self, master, icon, title, description, command):
-        """Génère une tuile uniforme et cliquable."""
-        card = ctk.CTkFrame(
-            master,
-            width=290,
-            height=200,
-            fg_color=self.COLOR_CARD_BG,
-            corner_radius=16,
-            border_width=1,
-            border_color="#334155",
-        )
-        card.pack_propagate(False)
-
-        card.bind("<Button-1>", lambda e: command())
-
-        lbl_icon = ctk.CTkLabel(
-            card,
-            text=icon,
-            font=ctk.CTkFont(size=36),
-            anchor="center",
-            justify="center",
-        )
-        lbl_icon.pack(fill="x", pady=(20, 8))
-        lbl_icon.bind("<Button-1>", lambda e: command())
-
-        lbl_title = ctk.CTkLabel(
-            card,
-            text=title,
-            font=ctk.CTkFont(family="Helvetica", size=15, weight="bold"),
-            text_color=self.COLOR_TEXT,
-        )
-        lbl_title.pack(pady=(0, 6))
-        lbl_title.bind("<Button-1>", lambda e: command())
-
-        lbl_desc = ctk.CTkLabel(
-            card,
-            text=description,
-            font=ctk.CTkFont(size=11),
-            text_color=self.COLOR_SUBTEXT,
-            justify="center",
-        )
-        lbl_desc.pack(padx=12, pady=(0, 12))
         lbl_desc.bind("<Button-1>", lambda e: command())
 
         def on_enter(e):
